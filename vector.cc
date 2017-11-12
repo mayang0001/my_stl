@@ -2,17 +2,21 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <vector>
 
 struct Person {
   Person(const std::string n = "", int a = 0)
-    : name(n), age(a) { 
+      : name(n), age(a) { 
     std::cout << "constructor is called" << std::endl;
   }
 
   Person(const Person& p)
-    : name(p.name), age(p.age) { 
+      : name(p.name), age(p.age) { 
     std::cout << "copy constructor is called" << std::endl;
+  }
+
+  Person(Person&& p) 
+      : name(std::move(p.name)), age(std::move(p.age)) {
+    std::cout << "move copy constructor is called" << std::endl; 
   }
 
   void DebugString() {
@@ -26,12 +30,13 @@ struct Person {
 
 template<typename T>
 class Vector {
+  friend void swap(Vector& x, Vector& y);
+
 public:
   Vector() 
-    : start_(nullptr), 
-      finish_(nullptr), 
-      end_of_storage_(nullptr) { 
-  }
+      : start_(nullptr), 
+        finish_(nullptr), 
+        end_of_storage_(nullptr) {}
 
   explicit Vector(int n) {
     start_ = alloc.allocate(n);
@@ -54,6 +59,13 @@ public:
     finish_ = end_of_storage_ = start_and_finish.second;
   }
 
+  Vector(Vector&& vec) 
+      : start_(vec.start_), 
+        finish_(vec.finish_), 
+        end_of_storage_(vec.end_of_storage_) {
+    vec.start_ = vec.finish_ = vec.end_of_storage_ = nullptr;
+  }
+
   // Initializer list may be implemented as a pair of pointers
   // or pointer and length
   // Vector(std::initializer_list<T>& il) {
@@ -71,15 +83,35 @@ public:
     return *this;
   }
 
+  Vector& operator=(Vector&& vec) {
+    if (this != &vec) {
+      free();
+      start_ = vec.start_;
+      finish_ = vec.finish_;
+      end_of_storage_ = vec.end_of_storage_;
+
+      vec.start_ = vec.finish_ = vec.end_of_storage_ = nullptr;
+    }
+    return *this;
+  }
+
   ~Vector() {
     free(); 
   }
 
-  void push_back(const T& str) {
+  void push_back(const T& val) {
     if (finish_ == end_of_storage_) {
       reallocate();
     } 
-    alloc.construct(finish_++, str);
+    alloc.construct(finish_++, val);
+  }
+
+  void push_back(T&& val) {
+    if (finish_ == end_of_storage_) {
+      reallocate();
+    }
+    //alloc.construct(finish_++, val);
+    alloc.construct(finish_++, std::move(val));
   }
 
   void pop_back() {
@@ -107,12 +139,12 @@ public:
 
   T& operator[] (int idx) { return *(start_ + idx); }
     
-  T* begin() const { return start_; }
-  T* end() const { return finish_; }
+  T* begin() noexcept { return start_; }
+  T* end() noexcept { return finish_; }
 
-  int size() { return finish_ - start_; }
-  int capacity() { return end_of_storage_ - start_; }
-  bool empty() { return finish_ == start_; }  
+  int size() const noexcept { return finish_ - start_; }
+  int capacity() const noexcept { return end_of_storage_ - start_; }
+  bool empty() const noexcept { return finish_ == start_; }  
 
 private:
   void free() {
@@ -147,12 +179,20 @@ private:
   T* end_of_storage_;
 };
 
+template<typename T>
+void swap(Vector<T>& x, Vector<T>& y) {
+  using std::swap;
+  swap(x.start_, y.start_);
+  swap(x.finish_, y.finish_);
+  swap(x.end_of_storage_, y.end_of_storage_);
+}
+
 int main() {
-  //Vector<Person> vec = {{"mayang", 18}, {"mayang", 19}};
+  Vector<Person> vec1 = {{"mayang", 18}, {"mayang", 19}};
   Vector<Person> vec;
   vec.emplace_back("mayang", 20);
-  Vector<Person> buf(vec.begin(), vec.end());
-  for (auto p : buf) p.DebugString();
+  vec.push_back(std::move(Person("mayang", 20)));
+  for (auto v : vec1) v.DebugString();
 }
 
 
