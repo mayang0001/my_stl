@@ -2,7 +2,7 @@
 
 template<typename Iterator, typename T> 
 Iterator find(Iterator begin, Iterator end, const T& val) {
-  for (Iterator iter = begin; iter != end; iter++) {
+  for (Iterator iter = begin; iter != end; ++iter) {
     if (*iter == val) {
       return iter;
     }
@@ -12,7 +12,7 @@ Iterator find(Iterator begin, Iterator end, const T& val) {
 
 template<typename Iterator, typename Function>
 Function for_each(Iterator begin, Iterator end, Function func) {
-  for (Iterator iter = begin; iter != end; iter++) {
+  for (Iterator iter = begin; iter != end; ++iter) {
     func(*iter);
   }
   return std::move(func);
