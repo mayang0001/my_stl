@@ -4,15 +4,15 @@
 
 template <typename T>
 struct ListNode {
-  typedef ListNode* pointer;
+  using pointer = ListNode*;
   pointer next;
   pointer prev;
   T data;
 };
 
-template <typename T>
+template <typename T, typename Ref, typename Ptr>
 struct ListIterator {
-  typedef ListNode<T>* link_type;
+  using link_type = ListNode<T>*;
 
   link_type node;
   
@@ -23,11 +23,11 @@ struct ListIterator {
   bool operator==(const ListIterator& x) { return node == x.node; }
   bool operator!=(const ListIterator& x) { return node != x.node; }
 
-  T& operator*() {
+  T& operator*() const {
     return node->data;
   }
 
-  T* operator->() {
+  T* operator->() const {
     return &(node->data); 
   }
 
@@ -45,12 +45,13 @@ struct ListIterator {
 template <typename T>
 class List {
 public:
-  typedef T value_type;
-  typedef value_type& reference;
-  typedef size_t size_type;
-  typedef ListIterator<T> iterator;
+  using value_type = T;
+  using reference = T&;
+  using size_type = size_t;
+  using iterator = ListIterator<T, T&, T*>; 
+  using const_iterator = ListIterator<T, const T&, const T*>; 
 private:
-  typedef ListNode<T>* link_type;
+  using link_type = ListNode<T>*;
 
 public:
   List() { EmptyInitialize(); }
@@ -69,19 +70,33 @@ public:
   }
 
   List(const List& list) {
+    EmptyInitialize();
+    for (auto iter = list.Begin(); iter != list.End(); ++iter) {
+      Insert(End(), *iter);
+    } 
+  }
+
+  List& operator=(const List& list) {
   
   }
 
   List(List&& list) {
+    EmptyInitialize();
+    for (auto iter = list.Begin(); iter != list.End(); ++iter) {
+      Insert(End(), std::move(*iter));
+    } 
+  }
+
+  List& operator=(List&& list) {
   
   }
 
   void PushBack(const T& val) {
-    insert(end(), val);
+    insert(End(), val);
   }
   
   void PushBack(T&& val) {
-  
+    Insert(End(), std::move(val));
   }
   
   template <typename... Args>
@@ -90,11 +105,11 @@ public:
   }
 
   void PushFront(const T& val) {
-    insert(begin(), val);
+    Insert(Begin(), val);
   }
 
   void PushFront(T&& val) {
-  
+    Insert(Begin(), std::move(val));
   }
 
   template <typename... Args>
@@ -103,16 +118,16 @@ public:
   }
 
   void PopBack() {
-    // erase(--end());
-    iterator tmp = end();
-    erase(--tmp);
+    // Erase(--End());
+    iterator tmp = End();
+    Erase(--tmp);
   }
 
   void PopFront() {
-    erase(begin()); 
+    Erase(Begin()); 
   }
 
-  iterator insert(iterator position, const T& val) {
+  iterator Insert(iterator position, const T& val) {
     link_type tmp = CreateNode(val);
     tmp->next = position.node;
     tmp->prev = position.node->prev;
@@ -121,7 +136,16 @@ public:
     return tmp;
   }
 
-  iterator erase(iterator position) {
+  iterator Insert(iterator position, T&& val) {
+    link_type tmp = CreateNode(val);
+    tmp->next = position.node;
+    tmp->prev = position.node->prev;
+    position.node->prev->next = tmp;
+    position.node->prev = tmp;
+    return tmp;
+  }
+
+  iterator Erase(iterator position) {
     link_type next_node = position.node->next;
     link_type prev_node = position.node->prev;
     next_node->prev = prev_node;
@@ -130,13 +154,15 @@ public:
     return next_node;
   }
 
-  iterator begin() { return node->next; }
-  iterator end() { return node; }
+  iterator Begin() { return node->next; }
+  const_iterator Begin() const { return node->next; }
+  iterator End() { return node; }
+  const_iterator End() const { return node; }
 
-  bool empty() { return node == node->next; }
+  bool Empty() { return node == node->next; }
 
-  reference front() { return *begin(); }
-  reference back() { return *(--end()); }
+  reference Front() { return *Begin(); }
+  reference Back() { return *(--End()); }
 
 private:
   link_type GetNode() {
@@ -175,12 +201,10 @@ int main() {
   my_list.PushBack(2);  
   my_list.PushBack(3);  
   my_list.PushBack(4);
-
-  for (auto iter = my_list.begin(); iter != my_list.end(); ++iter) {
-    std::cout << *iter << std::endl;
-  }
   my_list.PopBack();
-  for (auto iter = my_list.begin(); iter != my_list.end(); ++iter) {
+
+  List<int> list = std::move(my_list);
+  for (auto iter = list.Begin(); iter != list.End(); ++iter) {
     std::cout << *iter << std::endl;
   }
 }
