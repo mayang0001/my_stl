@@ -46,6 +46,14 @@ public:
     }
   }
 
+  Vector(int n, const T& val) {
+    start_ = alloc.allocate(n);
+    finish_ = end_of_storage_ = start_ + n;
+    for (auto p = start_; p != finish_; ) {
+      alloc.construct(p++, val);
+    }
+  }
+
   template<typename InputIterator>
   Vector(InputIterator first, InputIterator last) {
     auto start_and_finish = allocate_and_copy(first, last);

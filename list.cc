@@ -66,12 +66,20 @@ public:
   }
 
   List(size_type n, const T& val) {
-  
+    EmptyInitialize();
+    while (--n) {
+      Insert(End(), val);
+    }
   }
 
   template <typename Iterator>
   List(Iterator first, Iterator last) {
-  
+    EmptyInitialize();
+    auto iter = first;
+    while (iter != last) {
+      Insert(End(), *iter);
+      ++iter;
+    }
   }
 
   List(const List& list) {
@@ -231,14 +239,11 @@ int main() {
   List<int> my_list;
   my_list.PushBack(1);  
   my_list.PushFront(0);
-  my_list.Clear();
   my_list.PushBack(2);  
   my_list.PushBack(3);  
   my_list.PushBack(4);
-  my_list.PopBack();
 
-  List<int> list;
-  list = std::move(my_list);
+  List<int> list(my_list.Begin(), my_list.End());
   std::cout << list.Size() << std::endl;
   std::cout << my_list.Size() << std::endl;
 }
