@@ -1,6 +1,6 @@
 #include <memory>
 #include <iostream>
-
+#include <iterator>
 
 template <typename T>
 struct ListNode {
@@ -13,6 +13,11 @@ struct ListNode {
 template <typename T, typename Ref, typename Ptr>
 struct ListIterator {
   using link_type = ListNode<T>*;
+  using value_type = T;
+  using reference = Ref;
+  using pointer = Ptr;
+  using iterator_category = std::bidirectional_iterator_tag; 
+  using difference_type = ptrdiff_t;
 
   link_type node;
   
@@ -81,14 +86,23 @@ public:
   }
 
   List(List&& list) {
+    /***
     EmptyInitialize();
     for (auto iter = list.Begin(); iter != list.End(); ++iter) {
       Insert(End(), std::move(*iter));
     } 
+    ***/
+    node = list.node;
+    list.EmptyInitialize();
   }
 
   List& operator=(List&& list) {
-  
+    if (node != list.node) {
+      Clear();
+      node = list.node;
+      list.EmptyInitialize();
+    }  
+    return *this;
   }
 
   void PushBack(const T& val) {
@@ -127,6 +141,13 @@ public:
     Erase(Begin()); 
   }
 
+  void Clear() {
+    auto iter = Begin();
+    while (iter != End()) {
+      iter = Erase(iter);
+    }
+  }
+
   iterator Insert(iterator position, const T& val) {
     link_type tmp = CreateNode(val);
     tmp->next = position.node;
@@ -154,12 +175,24 @@ public:
     return next_node;
   }
 
+  iterator Erase(iterator first, iterator last) {
+    auto iter = first;
+    while (iter != last) {
+      iter = Erase(iter);
+    }
+    return iter;
+  }
+
   iterator Begin() { return node->next; }
   const_iterator Begin() const { return node->next; }
   iterator End() { return node; }
   const_iterator End() const { return node; }
 
-  bool Empty() { return node == node->next; }
+  bool Empty() const { return node == node->next; }
+  size_type Size() const {
+    size_type result = std::distance(Begin(), End());
+    return result;  
+  }
 
   reference Front() { return *Begin(); }
   reference Back() { return *(--End()); }
@@ -198,15 +231,16 @@ int main() {
   List<int> my_list;
   my_list.PushBack(1);  
   my_list.PushFront(0);
+  my_list.Clear();
   my_list.PushBack(2);  
   my_list.PushBack(3);  
   my_list.PushBack(4);
   my_list.PopBack();
 
-  List<int> list = std::move(my_list);
-  for (auto iter = list.Begin(); iter != list.End(); ++iter) {
-    std::cout << *iter << std::endl;
-  }
+  List<int> list;
+  list = std::move(my_list);
+  std::cout << list.Size() << std::endl;
+  std::cout << my_list.Size() << std::endl;
 }
 
 
