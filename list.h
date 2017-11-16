@@ -15,12 +15,12 @@ struct ListNode {
 
 template <typename T, typename Ref, typename Ptr>
 struct ListIterator {
-  using link_type = ListNode<T>*;
   using value_type = T;
   using reference = Ref;
   using pointer = Ptr;
   using iterator_category = std::bidirectional_iterator_tag; 
   using difference_type = ptrdiff_t;
+  using link_type = ListNode<T>*;
 
   link_type node;
   
@@ -117,7 +117,7 @@ public:
   }
 
   void PushBack(const T& val) {
-    insert(End(), val);
+    Insert(End(), val);
   }
   
   void PushBack(T&& val) {
@@ -169,7 +169,7 @@ public:
   }
 
   iterator Insert(iterator position, T&& val) {
-    link_type tmp = CreateNode(val);
+    link_type tmp = CreateNode(std::move(val));
     tmp->next = position.node;
     tmp->prev = position.node->prev;
     position.node->prev->next = tmp;
@@ -226,6 +226,12 @@ private:
   link_type CreateNode(const T& val) {
     link_type p = GetNode();
     alloc.construct(&p->data, val); 
+    return p;
+  }
+
+  link_type CreateNode(T&& val) {
+    link_type p = GetNode();
+    alloc.construct(&p->data, std::move(val)); 
     return p;
   }
 
