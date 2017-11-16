@@ -238,17 +238,4 @@ private:
   link_type node; 
 };
 
-int main() {
-  List<int> my_list;
-  my_list.PushBack(1);  
-  my_list.PushFront(0);
-  my_list.PushBack(2);  
-  my_list.PushBack(3);  
-  my_list.PushBack(4);
-
-  List<int> list(my_list.Begin(), my_list.End());
-  std::cout << list.Size() << std::endl;
-  std::cout << my_list.Size() << std::endl;
-}
-
 #endif
