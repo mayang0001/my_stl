@@ -1,3 +1,6 @@
+#ifndef ITERATOR_H
+#define ITERATOR_H
+
 #include <iostream>
 
 template<typename Iterator, typename T> 
@@ -24,3 +27,5 @@ OutputIterator transform(InputIterator begin, InputIterator end,
                          outputIterator result, UnaryOperation op) {
 
 }
+
+#endif

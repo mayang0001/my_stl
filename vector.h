@@ -1,3 +1,6 @@
+#ifndef VECTOR_H
+#define VECTOR_H
+
 #include <initializer_list>
 #include <iostream>
 #include <memory>
@@ -195,13 +198,4 @@ void swap(Vector<T>& x, Vector<T>& y) {
   swap(x.end_of_storage_, y.end_of_storage_);
 }
 
-int main() {
-  Vector<Person> vec1 = {{"mayang", 18}, {"mayang", 19}};
-  Vector<Person> vec;
-  vec.emplace_back("mayang", 20);
-  vec.push_back(std::move(Person("mayang", 20)));
-  for (auto v : vec1) v.DebugString();
-}
-
-
-
+#endif

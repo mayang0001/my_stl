@@ -1,3 +1,6 @@
+#ifndef LIST_H
+#define LIST_H
+
 #include <memory>
 #include <iostream>
 #include <iterator>
@@ -248,4 +251,4 @@ int main() {
   std::cout << my_list.Size() << std::endl;
 }
 
-
+#endif
