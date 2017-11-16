@@ -33,7 +33,10 @@ struct Person {
 
 template<typename T>
 class Vector {
-  friend void swap(Vector& x, Vector& y);
+public:
+  using value_type = T;
+  using reference = T&;
+  using difference_type = ptrdiff_t;
 
 public:
   Vector() 
@@ -189,13 +192,5 @@ private:
   T* finish_;
   T* end_of_storage_;
 };
-
-template<typename T>
-void swap(Vector<T>& x, Vector<T>& y) {
-  using std::swap;
-  swap(x.start_, y.start_);
-  swap(x.finish_, y.finish_);
-  swap(x.end_of_storage_, y.end_of_storage_);
-}
 
 #endif
