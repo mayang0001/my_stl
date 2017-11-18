@@ -6,37 +6,17 @@
 #include <memory>
 #include <string>
 
-struct Person {
-  Person(const std::string n = "", int a = 0)
-      : name(n), age(a) { 
-    std::cout << "constructor is called" << std::endl;
-  }
-
-  Person(const Person& p)
-      : name(p.name), age(p.age) { 
-    std::cout << "copy constructor is called" << std::endl;
-  }
-
-  Person(Person&& p) 
-      : name(std::move(p.name)), age(std::move(p.age)) {
-    std::cout << "move copy constructor is called" << std::endl; 
-  }
-
-  void DebugString() {
-    std::cout << "person name is " << name << std::endl;
-    std::cout << "person age is " << age << std::endl;
-  }
-
-  std::string name;
-  int age;
-};
-
 template<typename T>
 class Vector {
 public:
   using value_type = T;
+  using pointer = T*;
   using reference = T&;
+  using const_reference = const T&;
+  using size_type = size_t;
   using difference_type = ptrdiff_t;
+  using iterator = T*;
+  using const_iterator = const T*;
 
 public:
   Vector() 
@@ -133,6 +113,11 @@ public:
   } 
   
   template<typename... Args>
+  iterator emplace(const_iterator position, Args&&... args) {
+
+  }
+
+  template<typename... Args>
   void emplace_back(Args&&... args) {
     if (finish_ == end_of_storage_) {
       reallocate();
@@ -141,6 +126,30 @@ public:
     //alloc.construct(finish_++, args...); 
   }
 
+  iterator insert(iterator position, const T& val) {
+  
+  }
+
+  iterator insert(const_iterator position, const T& val) {
+  
+  }
+
+  iterator insert(const_iterator position, T&& val) {
+  
+  }
+
+  template <typename Iterator>
+  iterator insert(const_iterator position, Iterator first, Iterator last) {
+  
+  }
+
+  iterator erase(const_iterator position) {
+  
+  }
+
+  iterator erase(const_iterator first, const_iterator last) {
+  
+  }
   void clear() {
     std::for_each(start_, finish_, [this](T& s) { alloc.destroy(&s); });
     finish_ = start_;
@@ -149,13 +158,28 @@ public:
   void resize(int n) {
   }
 
-  T front() { return *start_; }
-  T back() { return *(finish_ - 1); }
+  value_type* data() noexcept { return start_; }
+  const value_type* data() const noexcept { return start_; }
 
-  T& operator[] (int idx) { return *(start_ + idx); }
+  reference front() { return *start_; }
+  const_reference front() const { return *start_; }
+  reference back() { return *(finish_ - 1); }
+  const_reference back() const { return *(finish_ - 1); }
+
+  T& at(int idx) {
+    // TODO check(idx < size());
+    return *(start_ + idx);  
+  } 
+
+  reference operator[](int idx) { return *(start_ + idx); }
+  const_reference operator[](int idx) const { return *(start_ + idx); }
     
-  T* begin() noexcept { return start_; }
-  T* end() noexcept { return finish_; }
+  iterator begin() noexcept { return start_; }
+  const_iterator begin() const noexcept { return start_; }
+  const_iterator cbegin() const noexcept { return start_; }
+  iterator end() noexcept { return finish_; }
+  const_iterator end() const noexcept { return finish_; }
+  const_iterator cend() const noexcept { return finish_; }
 
   int size() const noexcept { return finish_ - start_; }
   int capacity() const noexcept { return end_of_storage_ - start_; }
