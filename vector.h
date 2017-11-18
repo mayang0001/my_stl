@@ -137,7 +137,8 @@ public:
     if (finish_ == end_of_storage_) {
       reallocate();
     } 
-    alloc.construct(finish_++, args...); 
+    alloc.construct(finish_++, std::forward<Args>(args)...); 
+    //alloc.construct(finish_++, args...); 
   }
 
   void clear() {

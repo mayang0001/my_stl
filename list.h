@@ -62,33 +62,40 @@ private:
   using link_type = ListNode<T>*;
 
 public:
-  List() { EmptyInitialize(); }
+  List() { empty_initialize(); }
 
   explicit List(size_type n) {
   
   }
 
   List(size_type n, const T& val) {
-    EmptyInitialize();
+    empty_initialize();
     while (--n) {
-      Insert(End(), val);
+      insert(end(), val);
+    }
+  }
+
+  List(std::initializer_list<T> il) {
+    empty_initialize();
+    for (auto i : il) {
+      insert(end(), i);
     }
   }
 
   template <typename Iterator>
   List(Iterator first, Iterator last) {
-    EmptyInitialize();
+    empty_initialize();
     auto iter = first;
     while (iter != last) {
-      Insert(End(), *iter);
+      insert(end(), *iter);
       ++iter;
     }
   }
 
   List(const List& list) {
-    EmptyInitialize();
-    for (auto iter = list.Begin(); iter != list.End(); ++iter) {
-      Insert(End(), *iter);
+    empty_initialize();
+    for (auto iter = list.begin(); iter != list.end(); ++iter) {
+      insert(end(), *iter);
     } 
   }
 
@@ -98,69 +105,69 @@ public:
 
   List(List&& list) {
     /***
-    EmptyInitialize();
-    for (auto iter = list.Begin(); iter != list.End(); ++iter) {
-      Insert(End(), std::move(*iter));
+    empty_initialize();
+    for (auto iter = list.begin(); iter != list.end(); ++iter) {
+      insert(end(), std::move(*iter));
     } 
     ***/
     node = list.node;
-    list.EmptyInitialize();
+    list.empty_initialize();
   }
 
   List& operator=(List&& list) {
     if (node != list.node) {
       Clear();
       node = list.node;
-      list.EmptyInitialize();
+      list.empty_initialize();
     }  
     return *this;
   }
 
-  void PushBack(const T& val) {
-    Insert(End(), val);
+  void push_back(const T& val) {
+    insert(end(), val);
   }
   
-  void PushBack(T&& val) {
-    Insert(End(), std::move(val));
+  void push_back(T&& val) {
+    insert(end(), std::move(val));
   }
   
   template <typename... Args>
-  void EmplaceBack(Args&& ...args) {
+  void emplace_back(Args&& ...args) {
   
   }
 
-  void PushFront(const T& val) {
-    Insert(Begin(), val);
+  void push_front(const T& val) {
+    insert(begin(), val);
   }
 
-  void PushFront(T&& val) {
-    Insert(Begin(), std::move(val));
+  void push_front(T&& val) {
+    insert(begin(), std::move(val));
   }
 
   template <typename... Args>
-  void EmplaceFront(Args&& ...args) {
+  void emplace_front(Args&& ...args) {
   
   }
 
-  void PopBack() {
-    // Erase(--End());
-    iterator tmp = End();
-    Erase(--tmp);
+  void pop_back() {
+    // erase(--end());
+    iterator tmp = end();
+    erase(--tmp);
   }
 
-  void PopFront() {
-    Erase(Begin()); 
+  void pop_front() {
+    erase(begin()); 
   }
 
   void Clear() {
-    auto iter = Begin();
-    while (iter != End()) {
-      iter = Erase(iter);
+    auto iter = begin();
+    while (iter != end()) {
+      iter = erase(iter);
     }
   }
 
-  iterator Insert(iterator position, const T& val) {
-    link_type tmp = CreateNode(val);
+  iterator insert(iterator position, const T& val) {
+    link_type tmp = create_node(val);
     tmp->next = position.node;
     tmp->prev = position.node->prev;
     position.node->prev->next = tmp;
@@ -168,8 +175,8 @@ public:
     return tmp;
   }
 
-  iterator Insert(iterator position, T&& val) {
-    link_type tmp = CreateNode(std::move(val));
+  iterator insert(iterator position, T&& val) {
+    link_type tmp = create_node(std::move(val));
     tmp->next = position.node;
     tmp->prev = position.node->prev;
     position.node->prev->next = tmp;
@@ -177,67 +184,67 @@ public:
     return tmp;
   }
 
-  iterator Erase(iterator position) {
+  iterator erase(iterator position) {
     link_type next_node = position.node->next;
     link_type prev_node = position.node->prev;
     next_node->prev = prev_node;
     prev_node->next = next_node;
-    DestroyNode(position.node);
+    destroy_node(position.node);
     return next_node;
   }
 
-  iterator Erase(iterator first, iterator last) {
+  iterator erase(iterator first, iterator last) {
     auto iter = first;
     while (iter != last) {
-      iter = Erase(iter);
+      iter = erase(iter);
     }
     return iter;
   }
 
-  iterator Begin() { return node->next; }
-  const_iterator Begin() const { return node->next; }
-  iterator End() { return node; }
-  const_iterator End() const { return node; }
+  iterator begin() { return node->next; }
+  const_iterator begin() const { return node->next; }
+  iterator end() { return node; }
+  const_iterator end() const { return node; }
 
-  bool Empty() const { return node == node->next; }
+  bool empty() const { return node == node->next; }
   size_type Size() const {
-    size_type result = std::distance(Begin(), End());
+    size_type result = std::distance(begin(), end());
     return result;  
   }
 
-  reference Front() { return *Begin(); }
-  reference Back() { return *(--End()); }
+  reference front() { return *begin(); }
+  reference back() { return *(--end()); }
 
 private:
-  link_type GetNode() {
+  link_type get_node() {
     return alloc.allocate(1);
   }
 
-  void PutNode(link_type p) {
+  void put_node(link_type p) {
     alloc.deallocate(p, 1);
   }
   
-  void EmptyInitialize() {
-    node = GetNode();
+  void empty_initialize() {
+    node = get_node();
     node->next = node;
     node->prev = node;
   }
 
-  link_type CreateNode(const T& val) {
-    link_type p = GetNode();
+  link_type create_node(const T& val) {
+    link_type p = get_node();
     alloc.construct(&p->data, val); 
     return p;
   }
 
-  link_type CreateNode(T&& val) {
-    link_type p = GetNode();
+  link_type create_node(T&& val) {
+    link_type p = get_node();
     alloc.construct(&p->data, std::move(val)); 
     return p;
   }
 
-  void DestroyNode(link_type p) {
+  void destroy_node(link_type p) {
     alloc.destroy(p);
-    PutNode(p);
+    put_node(p);
   }
 
   std::allocator<ListNode<T>> alloc;
