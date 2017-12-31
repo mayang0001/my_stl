@@ -1,5 +1,7 @@
-#ifndef ITERATOR_H_
-#define ITERATOR_H_
+#ifndef ALGORITHM_H_
+#define ALGORITHM_H_
+
+namespace my {
 
 template <typename T>
 inline const T& max(const T& a, const T& b) {
@@ -19,7 +21,7 @@ T accumulate(InputIterator begin, InputIterator end, T init) {
   return init;
 }
 
-template <typename InputIterator, typename T, typename Fucntor>
+template <typename InputIterator, typename T, typename Functor>
 T accumulate(InputIterator begin, InputIterator end, T init, Functor binary_op) {
   for (; begin != end; ++begin) {
     init = binary_op(init, *begin);
@@ -38,7 +40,7 @@ InputIterator find(InputIterator begin, InputIterator end, const T& value) {
 template<typename InputIterator, typename Function>
 Function for_each(InputIterator begin, InputIterator end, Function func) {
   for (; begin != end; ++begin) {
-    func(*iter);
+    func(*begin);
   }
   return std::move(func);
 }
@@ -46,8 +48,36 @@ Function for_each(InputIterator begin, InputIterator end, Function func) {
 template<typename InputIterator, typename OutputIterator, 
          typename UnaryOperation>
 OutputIterator transform(InputIterator begin, InputIterator end,
-                         outputIterator result, UnaryOperation op) {
+                         OutputIterator result, UnaryOperation op) {
 
 }
 
-#endif
+template <typename InputIterator>
+typename std::iterator_traits<InputIterator>::difference_type
+__Distance(InputIterator begin, InputIterator end, std::input_iterator_tag) {
+  typename std::iterator_traits<InputIterator>::difference_type n = 0;
+  while (begin != end) {
+    ++begin;
+    ++n;
+  }
+  return n;
+}
+
+template <typename RandomAccessIterator>
+typename std::iterator_traits<RandomAccessIterator>::difference_type
+__Distance(RandomAccessIterator begin, RandomAccessIterator end, std::random_access_iterator_tag) {
+  return end - begin;
+}
+
+template <typename InputIterator>
+typename std::iterator_traits<InputIterator>::difference_type
+distance(InputIterator begin, InputIterator end) {
+  typedef typename std::iterator_traits<InputIterator>::iterator_category category;
+  //distance(begin, end, category);
+  return __Distance(begin, end, category());
+}
+
+} // namespace my
+
+#endif // ALGORITHM_H_
+
