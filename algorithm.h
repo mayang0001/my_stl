@@ -11,33 +11,33 @@ inline const T& max(const T& a, const T& b, Functor compare) {
   return compare(a < b) ? b : a;
 }
 
-template <typename Iterator, typename T>
-T accumulate(Iterator begin, Iterator end, T init) {
+template <typename InputIterator, typename T>
+T accumulate(InputIterator begin, InputIterator end, T init) {
   for (; begin != end; ++begin) {
     init = init + *begin;
   }
   return init;
 }
 
-template <typename Iterator, typename T, typename Fucntor>
-T accumulate(Iterator begin, Iterator end, T init, Functor binary_op) {
+template <typename InputIterator, typename T, typename Fucntor>
+T accumulate(InputIterator begin, InputIterator end, T init, Functor binary_op) {
   for (; begin != end; ++begin) {
     init = binary_op(init, *begin);
   }
   return init;
 }
 
-template<typename Iterator, typename T> 
-Iterator find(Iterator begin, Iterator end, const T& value) {
+template<typename InputIterator, typename T> 
+InputIterator find(InputIterator begin, InputIterator end, const T& value) {
   while (begin != end && *begin != value) {
     ++begin;
   }
   return begin;
 }
 
-template<typename Iterator, typename Function>
-Function for_each(Iterator begin, Iterator end, Function func) {
-  for (Iterator iter = begin; iter != end; ++iter) {
+template<typename InputIterator, typename Function>
+Function for_each(InputIterator begin, InputIterator end, Function func) {
+  for (; begin != end; ++begin) {
     func(*iter);
   }
   return std::move(func);
