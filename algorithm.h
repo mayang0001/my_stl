@@ -77,6 +77,37 @@ distance(InputIterator begin, InputIterator end) {
   return __Distance(begin, end, category());
 }
 
+template <typename InputIterator, typename Distance>
+void __Advance(InputIterator& i, Distance n, std::input_iterator_tag) {
+  while (n--) {
+    ++i;
+  }
+}
+
+template <typename BidirectionalIterator, typename Distance>
+void __Advance(BidirectionalIterator& i, Distance n, std::bidirectional_iterator_tag) {
+  if (n >= 0) {
+    while (n--) {
+      ++i;
+    }
+  } else {
+    while (n++) {
+      --i;
+    }
+  }
+}
+
+template <typename RandomAccessIterator, typename Distance>
+void __Advance(RandomAccessIterator& i, Distance n, std::random_access_iterator_tag) {
+  i += n;
+}
+
+template <typename InputIterator, typename Distance>
+void advance(InputIterator& i, Distance n) {
+  typedef typename std::iterator_traits<InputIterator>::iterator_category category;
+  return __Advance(i, n, category());
+}
+
 } // namespace my
 
 #endif // ALGORITHM_H_
