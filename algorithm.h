@@ -1,6 +1,16 @@
 #ifndef ITERATOR_H_
 #define ITERATOR_H_
 
+template <typename T>
+inline const T& max(const T& a, const T& b) {
+  return a < b ? b : a;
+}
+
+template <typename T, typename Functor>
+inline const T& max(const T& a, const T& b, Functor compare) {
+  return compare(a < b) ? b : a;
+}
+
 template <typename Iterator, typename T>
 T accumulate(Iterator begin, Iterator end, T init) {
   for (; begin != end; ++begin) {
