@@ -174,4 +174,67 @@ std::pair<iterator, bool> InsertUniqueNoResize(const value_type& val) {
   return std::pair<iterator, bool>(iterator(temp, this), true);
 }
 
+template <typename Key, typename T, typename Hash = hash<Key>, 
+          typename Pred = equal_to<Key>>
+class HashMap {
+ public:
+  using key_type = Key;
+  using mapped_type = T;
+  using value_type = std::pair<Key, T>;
+  using hasher = Hash;
+  using key_equal = Pred;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
+  using iterator = HashTableIterator<value_type, key_type, hash, /*TODO*/, key_equal>;
+  using const_iterator = iterator;
+  using size_type = size_t;
+
+  bool Empty() const;
+  size_type Size() const;
+  size_type MaxSize() const;
+
+  iterator Begin();
+  iterator End();
+
+  const_iterator Begin() const;
+  const_iterator End() const;
+
+  key_type& operator()[];
+
+  iterator Find(const key_type& k);
+  const_iterator Find(const key_type& k) const;
+
+  // return 0 or 1, since no dupulicates
+  size_type Count(const key_type& k) const;
+
+  template <typename... Args>
+  std::pair<iterator, bool> Emplace(Args&&... args);
+
+  std::pair<iterator, bool> Insert(const value_type& val);
+  template <typename P>
+  std::pair<iterator, bool> Insert(P&& val);
+  template <typename InputIterator>
+  void Insert(InputIterator first, InputIterator last);
+  void Insert(std::initializer_list<value_type> il);
+
+  iterator Erase(const_iterator pos);
+  // return the number of elements erased
+  size_type Erase(const key_type& key);
+  iterator Erase(const_iterator first, const_iterator last);
+
+  void Clear();
+
+  size_type BucketCount() const;
+  size_type MaxBucketCount() const;
+  size_type Bucket(const key_type& key) const;
+  size_type BucketSize(size_type n) const;
+
+  // size / bucket_count
+  float LoadFactor() const;
+  float MaxLoadFactor() const;
+  void MaxLoadFactor(float factor);
+};
+
 #endif
