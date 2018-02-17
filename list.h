@@ -15,14 +15,19 @@ struct ListNode {
 
 template <typename T, typename Ref, typename Ptr>
 struct ListIterator {
+  using iterator = ListIterator<T, T&, T*>;
+  using const_iterator = ListIterator<T, const T&, const T*>;
+  using Self = ListIterator<T, Ref, Ptr>;
+
   using value_type = T;
   using reference = Ref;
   using pointer = Ptr;
-  using iterator_category = std::bidirectional_iterator_tag; 
   using difference_type = ptrdiff_t;
-  using link_type = ListNode<T>*;
+  using iterator_category = std::bidirectional_iterator_tag; 
 
-  link_type node;
+  using Node = ListNode<T>;
+
+  Node* node;
   
   ListIterator() { node = nullptr; }
   ListIterator(link_type x) { node = x; }
@@ -34,14 +39,26 @@ struct ListIterator {
   T& operator*() const { return node->data; }
   T* operator->() const { return &(node->data); }
 
-  link_type operator++() {
+  Self& operator++() {
     node = node->next;
-    return node;
+    return *this;
   }
 
-  link_type operator--() {
+  Self operator++(int) {
+    Self temp = *this;
+    ++*this;
+    return temp;
+  }
+
+  Self& operator--() {
     node = node->prev;
-    return node;
+    return *this;
+  }
+
+  Self operator--(int) {
+    Self temp = *this;
+    --*this;
+    return temp;
   }
 };
 
