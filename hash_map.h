@@ -68,6 +68,36 @@ class HashTable {
   HashTable() {
     
   }
+  
+  size_type Size() { return num_elements_; }
+  size_type Size() { return size_type(-1); }
+  bool Empty() { return Size() == 0; }
+
+  iterator Begin() {
+    for (size_type i = 0; i < buckets_.size(); ++i) {
+      if (buckets_[i]) {
+        return iterator(buckets_[i], this);
+      }
+    }
+    return End();
+  }
+
+  iterator End() {
+    return iterator(nullptr, this);
+  }
+
+  const_iterator Begin() const {
+    for (size_type i = 0; i < buckets_.size(); ++i) {
+      if (buckets_[i]) {
+        return iterator(buckets_[i], this);
+      }
+    }
+    return End();
+  }
+
+  const_iterator End() const {
+    return const_iterator(nullptr, this);
+  }
 
   std::pair<iterator, bool> InsertUnique(const value_type& val) {
     Resize(num_elements_ + 1);
@@ -75,7 +105,7 @@ class HashTable {
   }
 
   size_type BucketCount() const { return buckets_.size(); }
-  size_type num_elements_;
+  size_type MaxBucketCount() const { return prime_list.back(); }
 
  private:
   size_type BktNum(const value_type& val) {
@@ -109,6 +139,7 @@ class HashTable {
   using Node = HashTableNode<Value>;
   std::allocator<Node> alloc;
   std::vector<Node*> buckets_;
+  size_type num_elements_;
 
   int NextPrime(int n); 
   static const int num_primes = 28;
