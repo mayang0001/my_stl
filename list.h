@@ -31,13 +31,8 @@ struct ListIterator {
   bool operator==(const ListIterator& x) { return node == x.node; }
   bool operator!=(const ListIterator& x) { return node != x.node; }
 
-  T& operator*() const {
-    return node->data;
-  }
-
-  T* operator->() const {
-    return &(node->data); 
-  }
+  T& operator*() const { return node->data; }
+  T* operator->() const { return &(node->data); }
 
   link_type operator++() {
     node = node->next;
