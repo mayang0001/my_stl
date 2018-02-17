@@ -70,10 +70,12 @@ public:
   }
 
   Vector& operator=(const Vector& vec) {
-    auto start_and_finish = allocate_and_copy(vec.begin(), vec.end());
-    free();
-    start_ = start_and_finish.first;
-    finish_ = end_of_storage_ = start_and_finish.second;
+    if (this != &vec) {
+      auto start_and_finish = allocate_and_copy(vec.begin(), vec.end());
+      free();
+      start_ = start_and_finish.first;
+      finish_ = end_of_storage_ = start_and_finish.second;
+    }
     return *this;
   }
 
@@ -126,11 +128,11 @@ public:
     //alloc.construct(finish_++, args...); 
   }
 
-  iterator insert(iterator position, const T& val) {
-  
+  iterator insert(const_iterator position, const T& val) {
+    insert(position, 1, val); 
   }
 
-  iterator insert(const_iterator position, const T& val) {
+  iterator insert(const_iterator position, size_type n, const T& val) {
   
   }
 
@@ -140,19 +142,24 @@ public:
 
   template <typename Iterator>
   iterator insert(const_iterator position, Iterator first, Iterator last) {
-  
   }
 
   iterator erase(const_iterator position) {
-  
+    copy(position + 1, finish_, position);
+    --finish_;
+    alloc.destroy(finish_);
+    return position;
   }
 
   iterator erase(const_iterator first, const_iterator last) {
-  
+    iterator i = copy(last, finish_, first);
+    alloc.destroy(i, finish_);
+    finish_ = finish_ - (last - first);
+    return first; 
   }
+
   void clear() {
-    std::for_each(start_, finish_, [this](T& s) { alloc.destroy(&s); });
-    finish_ = start_;
+    erase(begin(), end());
   }
 
   void resize(int n) {
@@ -206,9 +213,10 @@ private:
     end_of_storage_ = start_ + size;
   }
 
-  std::pair<T*, T*> allocate_and_copy(const T* b, const T* e) {
-    auto start = alloc.allocate(e - b);
-    auto finish = std::uninitialized_copy(b, e, start);
+  std::pair<T*, T*> allocate_and_copy(const T* begin, 
+                                      const T* end) {
+    auto start = alloc.allocate(end - begin);
+    auto finish = std::uninitialized_copy(begin, end, start);
     return {start, finish}; 
   }
 
