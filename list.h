@@ -1,5 +1,5 @@
-#ifndef LIST_H
-#define LIST_H
+#ifndef LIST_H_
+#define LIST_H_
 
 #include <memory>
 #include <iostream>
@@ -23,6 +23,7 @@ struct ListIterator {
   using reference = Ref;
   using pointer = Ptr;
   using difference_type = ptrdiff_t;
+  using size_type = size_t;
   using iterator_category = std::bidirectional_iterator_tag; 
 
   using Node = ListNode<T>;
@@ -30,7 +31,7 @@ struct ListIterator {
   Node* node;
   
   ListIterator() { node = nullptr; }
-  ListIterator(link_type x) { node = x; }
+  ListIterator(Node* x) { node = x; }
   ListIterator(const ListIterator& x) { node = x.node; }
 
   bool operator==(const ListIterator& x) { return node == x.node; }
@@ -71,7 +72,7 @@ public:
   using iterator = ListIterator<T, T&, T*>; 
   using const_iterator = ListIterator<T, const T&, const T*>; 
 private:
-  using link_type = ListNode<T>*;
+  using Node = ListNode<T>;
 
 public:
   List() { empty_initialize(); }
@@ -179,7 +180,7 @@ public:
   }
 
   iterator insert(iterator position, const T& val) {
-    link_type tmp = create_node(val);
+    Node* tmp = create_node(val);
     tmp->next = position.node;
     tmp->prev = position.node->prev;
     position.node->prev->next = tmp;
@@ -188,7 +189,7 @@ public:
   }
 
   iterator insert(iterator position, T&& val) {
-    link_type tmp = create_node(std::move(val));
+    Node* tmp = create_node(std::move(val));
     tmp->next = position.node;
     tmp->prev = position.node->prev;
     position.node->prev->next = tmp;
@@ -197,8 +198,8 @@ public:
   }
 
   iterator erase(iterator position) {
-    link_type next_node = position.node->next;
-    link_type prev_node = position.node->prev;
+    Node* next_node = position.node->next;
+    Node* prev_node = position.node->prev;
     next_node->prev = prev_node;
     prev_node->next = next_node;
     destroy_node(position.node);
@@ -228,11 +229,11 @@ public:
   reference back() { return *(--end()); }
 
 private:
-  link_type get_node() {
+  Node* get_node() {
     return alloc.allocate(1);
   }
 
-  void put_node(link_type p) {
+  void put_node(Node* p) {
     alloc.deallocate(p, 1);
   }
   
@@ -242,25 +243,25 @@ private:
     node->prev = node;
   }
 
-  link_type create_node(const T& val) {
-    link_type p = get_node();
+  Node* create_node(const T& val) {
+    Node* p = get_node();
     alloc.construct(&p->data, val); 
     return p;
   }
 
-  link_type create_node(T&& val) {
-    link_type p = get_node();
+  Node* create_node(T&& val) {
+    Node* p = get_node();
     alloc.construct(&p->data, std::move(val)); 
     return p;
   }
 
-  void destroy_node(link_type p) {
+  void destroy_node(Node* p) {
     alloc.destroy(p);
     put_node(p);
   }
 
   std::allocator<ListNode<T>> alloc;
-  link_type node; 
+  Node* node; 
 };
 
 #endif
