@@ -1,6 +1,11 @@
 #ifndef HASH_MAP_H_
 #define HASH_MAP_H_
 
+#include <functional>
+#include <vector>
+#include <memory>
+#include <iterator>
+
 template <typename Value>
 struct HashTableNode {
   Value value;
@@ -24,11 +29,11 @@ template <typename Value, typename Key, typename HashFcn,
 struct HashTableIterator {
   using Node = HashTableNode<Value>;
   using HashTable = HashTable<Value, Key, HashFcn, ExtractKey, EqualKey>;
-  using iterator = HashTableIterator<Value, Key, HashFcn, ExtractKey, EquakKey>;
+  using iterator = HashTableIterator<Value, Key, HashFcn, ExtractKey, EqualKey>;
   using const_iterator = HashTableConstIterator<Value, Key, HashFcn, 
-                                                ExtractKey, EquakKey>;
+                                                ExtractKey, EqualKey>;
 
-  using iterator_category = forward_iterator_tag;
+  using iterator_category = std::forward_iterator_tag;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
   using value_type = Value;
@@ -42,7 +47,7 @@ struct HashTableIterator {
   reference operator*() const { return cur->val; }
   pointer operator->() const { return &(*this); }
   iterator& operator++() {
-    const Node* n = cur;
+    const Node* node = cur;
     cur = cur->next;
     if (cur == nullptr) {
       size_type bucket = ht->BktNum(node->val);
@@ -71,25 +76,25 @@ template <typename Value, typename Key, typename HashFcn,
 struct HashTableConstIterator {
   using Node = HashTableNode<Value>;
   using HashTable = HashTable<Value, Key, HashFcn, ExtractKey, EqualKey>;
-  using iterator = HashTableIterator<Value, Key, HashFcn, ExtractKey, EquakKey>;
+  using iterator = HashTableIterator<Value, Key, HashFcn, ExtractKey, EqualKey>;
   using const_iterator = HashTableConstIterator<Value, Key, HashFcn, 
-                                                ExtractKey, EquakKey>;
+                                                ExtractKey, EqualKey>;
 
-  using iterator_category = forward_iterator_tag;
+  using iterator_category = std::forward_iterator_tag;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
   using value_type = Value;
   using reference = const value_type&;
   using pointer = const value_type*;
 
-  HashTableIterator() = default;
-  HashTableIterator(const Node* node, const HashTable* hash_table) 
+  HashTableConstIterator() = default;
+  HashTableConstIterator(const Node* node, const HashTable* hash_table) 
       : cur(node), ht(hash_table) {}
 
   reference operator*() const { return cur->val; }
   pointer operator->() const { return &(*this); }
   const_iterator& operator++() {
-    const Node* n = cur;
+    const Node* node = cur;
     cur = cur->next;
     if (cur == nullptr) {
       size_type bucket = ht->BktNum(node->val);
@@ -123,10 +128,11 @@ class HashTable {
   using reference = value_type&;
   using const_reference = const value_type&;
   using key_type = Key;
-  using hash = HashFcn;
+  using hasher = HashFcn;
   using get_key = ExtractKey;
   using equal_key = EqualKey;
   using size_type = size_t;
+  using difference_type = ptrdiff_t;
 
   using iterator = HashTableIterator<Value, Key, HashFcn, 
                                      ExtractKey, EqualKey>;
@@ -229,14 +235,14 @@ class HashTable {
   void Erase(const const_iterator& iter) {
   
   }
-  void Erase(const_iiterator first, const_iterator last) {
+  void Erase(const_iterator first, const_iterator last) {
   
   }
 
   size_type BucketCount() const { return buckets_.size(); }
   size_type MaxBucketCount() const { return prime_list.back(); }
   size_type Bucket(const key_type& key) const { return BktNum(key); }
-  size_type BucketSize(size_type Bucket) const {
+  size_type BucketSize(size_type bucket) const {
     size_type cnt = 0;
     for (Node* node = buckets_[bucket]; node; node = node->next) {
       ++cnt;
@@ -282,17 +288,20 @@ class HashTable {
   float max_load_factor_;
   std::allocator<Node> alloc;
 
-  int NextPrime(int n); 
+  long NextPrime(int n) const; 
   static const int num_primes = 28;
-  static const std::vector<int> prime_list = 
-      {53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593, 49157, 98317,
-       196613, 393241, 786433, 1572869, 3145739, 6291469, 12582917, 25165843,
-       50331653, 100663319, 201326611, 402653189, 805306457, 1610612741,
-       3221225473, 4294967291};
+  static std::vector<long> prime_list; 
 };
 
 template <typename Value, typename Key, typename HF, typename ExK, typename EqK>
-int HashTable<Value, Key, HF, ExK, EqK>::NextPrime(int n) const {
+std::vector<long> HashTable<Value, Key, HF, ExK, EqK>::prime_list = {
+    53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593, 49157, 98317,
+    196613, 393241, 786433, 1572869, 3145739, 6291469, 12582917, 25165843,
+    50331653, 100663319, 201326611, 402653189, 805306457, 1610612741,
+    3221225473, 4294967291};
+
+template <typename Value, typename Key, typename HF, typename ExK, typename EqK>
+long HashTable<Value, Key, HF, ExK, EqK>::NextPrime(int n) const {
   const auto first = prime_list.begin();
   const auto last = prime_list.end();
   const auto pos = std::lower_bound(first, last, n);
@@ -334,7 +343,7 @@ HashTable<Value, Key, HF, ExK, EqK>
 
   for (Node* cur = first; cur; cur = cur->next) {
     if (equal_key(cur->val, first->val)) {
-      return pair<iterator, bool>(iterator(cur, this), false);
+      return std::pair<iterator, bool>(iterator(cur, this), false);
     }
   }
 
@@ -345,26 +354,32 @@ HashTable<Value, Key, HF, ExK, EqK>
   return std::pair<iterator, bool>(iterator(temp, this), true);
 }
 
-template <typename Key, typename T, typename Hash = hash<Key>, 
-          typename Pred = equal_to<Key>>
+ template <typename K, typename V>
+ struct select_first { 
+  K operator() (const std::pair<K, V>& value) { return value.first; }
+};
+
+template <typename Key, typename T, typename Hash = std::hash<Key>, 
+          typename Pred = std::equal_to<Key>>
 class HashMap {
  public:
-  using HashTable = HashTable<std::pair<Key, T>, Key, Hash, SelectFirst, Pred>;
+  using HashTable = HashTable<std::pair<Key, T>, Key, Hash, 
+                              select_first<Key, T>, Pred>;
 
-  using key_type = HashTable::key_type;
+  using key_type = typename HashTable::key_type;
   using data_type = T;
   using mapped_type = T;
-  using value_type = HashTable::value_type;
-  using hasher = HashTable::hasher;
-  using key_equal = HashTable::key_equal;
-  using size_type = HashTable::size_type;
-  using difference_type = HashTable::difference_type;
-  using pointer = HashTable::pointer;
-  using const_pointer = HashTable::const_pointer;
-  using iterator = HashTable::iterator;
-  using const_iterator = HashTable::const_iterator;
-  using reference = HashTable::reference;
-  using const_reference = HashTable::reference;
+  using value_type = typename HashTable::value_type;
+  using hasher = typename HashTable::hasher;
+  using equal_key = typename HashTable::equal_key;
+  using size_type = typename HashTable::size_type;
+  using difference_type = typename HashTable::difference_type;
+  using pointer = typename HashTable::pointer;
+  using const_pointer = typename HashTable::const_pointer;
+  using iterator = typename HashTable::iterator;
+  using const_iterator = typename HashTable::const_iterator;
+  using reference = typename HashTable::reference;
+  using const_reference = typename HashTable::reference;
  private:
   HashTable hash_table_;
 
@@ -378,7 +393,7 @@ class HashMap {
   const_iterator Begin() const { return hash_table_.Begin(); }
   const_iterator End() const { return hash_table_.End(); }
 
-  key_type& operator()[];
+  data_type& operator[](const key_type& key);
 
   iterator Find(const key_type& k) { return hash_table_.Find(k); }
   const_iterator Find(const key_type& k) const { return hash_table_.Find(k); }
@@ -424,8 +439,8 @@ class HashMap {
 
   // size / bucket_count
   float LoadFactor() const { return hash_table_.LoadFactor(); }
-  float MaxLoadFactor() const { return load_factor_; }
-  void MaxLoadFactor(float factor) { load_factor_ = factor; }
+  float MaxLoadFactor() const { return hash_table_.MaxLoadFactor(); }
+  void MaxLoadFactor(float factor) { hash_table_.MaxLoadFactor(factor); }
 };
 
 #endif
