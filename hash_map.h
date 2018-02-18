@@ -13,10 +13,20 @@ class HashTable;
 
 template <typename Value, typename Key, typename HashFcn,
           typename ExtractKey, typename EqualKey>
+struct HashTableIterator;
+
+template <typename Value, typename Key, typename HashFcn,
+          typename ExtractKey, typename EqualKey>
+struct HashTableConstIterator;
+
+template <typename Value, typename Key, typename HashFcn,
+          typename ExtractKey, typename EqualKey>
 struct HashTableIterator {
-  using HashTable = HashTable<Value, Key, HashFcn, ExtractKey, EqualKey>;
   using Node = HashTableNode<Value>;
+  using HashTable = HashTable<Value, Key, HashFcn, ExtractKey, EqualKey>;
   using iterator = HashTableIterator<Value, Key, HashFcn, ExtractKey, EquakKey>;
+  using const_iterator = HashTableConstIterator<Value, Key, HashFcn, 
+                                                ExtractKey, EquakKey>;
 
   using iterator_category = forward_iterator_tag;
   using size_type = size_t;
@@ -29,8 +39,8 @@ struct HashTableIterator {
   HashTableIterator(Node* node, HashTable* hash_table) 
       : cur(node), ht(hash_table) {}
 
-  reference operator*() { return cur->val; }
-  pointer operator->() { return &(*this); }
+  reference operator*() const { return cur->val; }
+  pointer operator->() const { return &(*this); }
   iterator& operator++() {
     const Node* n = cur;
     cur = cur->next;
@@ -48,6 +58,56 @@ struct HashTableIterator {
     ++*this;
     return temp;
   }
+
+  bool operator==(const iterator& iter) const { return cur == iter.cur; }
+  bool operator!=(const iterator& iter) const { return cur != iter.cur; }
+
+  Node* cur;
+  HashTable* ht;
+};
+
+template <typename Value, typename Key, typename HashFcn,
+          typename ExtractKey, typename EqualKey>
+struct HashTableConstIterator {
+  using Node = HashTableNode<Value>;
+  using HashTable = HashTable<Value, Key, HashFcn, ExtractKey, EqualKey>;
+  using iterator = HashTableIterator<Value, Key, HashFcn, ExtractKey, EquakKey>;
+  using const_iterator = HashTableConstIterator<Value, Key, HashFcn, 
+                                                ExtractKey, EquakKey>;
+
+  using iterator_category = forward_iterator_tag;
+  using size_type = size_t;
+  using difference_type = ptrdiff_t;
+  using value_type = Value;
+  using reference = const value_type&;
+  using pointer = const value_type*;
+
+  HashTableIterator() = default;
+  HashTableIterator(const Node* node, const HashTable* hash_table) 
+      : cur(node), ht(hash_table) {}
+
+  reference operator*() const { return cur->val; }
+  pointer operator->() const { return &(*this); }
+  const_iterator& operator++() {
+    const Node* n = cur;
+    cur = cur->next;
+    if (cur == nullptr) {
+      size_type bucket = ht->BktNum(node->val);
+      while (cur == nullptr && ++bucket < ht->buckets_.size()) {
+        cur = ht->buckets_[bucket];
+      }
+    }
+    return *this;
+  }
+
+  const_iterator operator++(int) {
+    iterator temp = *this;
+    ++*this;
+    return temp;
+  }
+
+  bool operator==(const const_iterator& iter) const { return cur == iter.cur; }
+  bool operator!=(const const_iterator& iter) const { return cur != iter.cur; }
 
   Node* cur;
   HashTable* ht;
