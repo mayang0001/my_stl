@@ -155,8 +155,9 @@ class HashTable {
         hash_fcn_(hf),
         extract_key_(exk),
         equal_key_(eqk) {
-    buckets_.reserve(n);
-    buckets_.insert(buckets_.end(), n, nullptr);
+    const size_type bucket_size = NextSize(n);
+    buckets_.reserve(bucket_size);
+    buckets_.insert(buckets_.end(), bucket_size, nullptr);
   }
   
   HashTable(const HashTable& ht) 
@@ -164,19 +165,19 @@ class HashTable {
         hash_fcn_(ht.hash_fcn_),
         extract_key_(ht.extract_key_),
         equal_key_(ht.equal_key_) {
-    buckets_.resize(num_elements_);
-    // TODO copy
+    CopyFrom(ht);
   }
 
   HashTable& operator=(const HashTable& ht) {
-    if (this != &this) {
+    if (this != &ht) {
       Clear();
       num_elements_ = ht.num_elements_;
       hash_fcn_ = ht.hash_fcn_;
       extract_key_ = ht.extract_key_;
       equal_key_ = ht.equal_key_;
-      // TODO copy
+      CopyFrom(ht);
     } 
+    return *this;
   }
 
   ~HashTable() { Clear(); }
@@ -273,7 +274,18 @@ class HashTable {
   
   }
 
-  void Clear() {}
+  void Clear() {
+    for (size_type bucket; bucket < buckets_.size(); ++bucket) {
+      Node* cur = buckets_[bucket];
+      while (cur) {
+        Node* next = cur->next;
+        DeleteNode(cur);
+        cur = next;
+      }
+      buckets_[bucket] = nullptr;
+    }
+    num_elements_ = 0;
+  }
 
   size_type BucketCount() const { return buckets_.size(); }
   size_type MaxBucketCount() const { return prime_list.back(); }
@@ -292,11 +304,11 @@ class HashTable {
 
  private:
   size_type BktNum(const value_type& val) const {
-    return BktNum(get_key()(val), buckets_.size());
+    return BktNum(extract_key_(val), buckets_.size());
   }
 
   size_type BktNum(const value_type& val, size_type n) const {
-    return BktNum(get_key()(val), n);
+    return BktNum(extract_key_(val), n);
   }
 
   size_type BktNum(const key_type& key, size_type n) const {
@@ -315,9 +327,11 @@ class HashTable {
   }
 
   void DeleteNode(Node* node) {
-    alloc.destroy(&node->val);
-    alloc.deallocate(node);
+    alloc.destroy(node);
+    alloc.deallocate(node, sizeof(Node));
   }
+
+  void CopyFrom(const HashTable& hash_table);
 
   std::vector<Node*> buckets_;
   size_type num_elements_;
@@ -328,7 +342,7 @@ class HashTable {
   float max_load_factor_;
   std::allocator<Node> alloc;
 
-  long NextPrime(int n) const; 
+  unsigned long NextSize(unsigned long n) const; 
   static const int num_primes = 28;
   static std::vector<long> prime_list; 
 };
@@ -341,7 +355,8 @@ std::vector<long> HashTable<Value, Key, HF, ExK, EqK>::prime_list = {
     3221225473, 4294967291};
 
 template <typename Value, typename Key, typename HF, typename ExK, typename EqK>
-long HashTable<Value, Key, HF, ExK, EqK>::NextPrime(int n) const {
+unsigned long 
+HashTable<Value, Key, HF, ExK, EqK>::NextSize(unsigned long n) const {
   const auto first = prime_list.begin();
   const auto last = prime_list.end();
   const auto pos = std::lower_bound(first, last, n);
@@ -353,7 +368,7 @@ template <typename Value, typename Key, typename HF, typename ExK, typename EqK>
 void HashTable<Value, Key, HF, ExK, EqK>::Resize(size_type num_elements) {
   const size_type old_num_elements = buckets_.size();
   if (num_elements > old_num_elements) {
-    const size_type n = NextPrime(old_num_elements);
+    const size_type n = NextSize(num_elements);
     if (n > old_num_elements) {
       std::vector<Node*> temp(n, nullptr);
 
@@ -382,7 +397,7 @@ HashTable<Value, Key, HF, ExK, EqK>
   Node* first = buckets_[bucket];
 
   for (Node* cur = first; cur; cur = cur->next) {
-    if (equal_key()(get_key()(cur->value), get_key()(val))) {
+    if (equal_key_(extract_key_(cur->value), extract_key_(val))) {
       return std::pair<iterator, bool>(iterator(cur, this), false);
     }
   }
@@ -392,6 +407,27 @@ HashTable<Value, Key, HF, ExK, EqK>
   buckets_[bucket] = temp;
   ++num_elements_;
   return std::pair<iterator, bool>(iterator(temp, this), true);
+}
+
+template <typename V, typename K, typename HF, typename ExK, typename EqK>
+void HashTable<V, K, HF, ExK, EqK>::CopyFrom(const HashTable& hash_table) {
+  // TODO Why
+  buckets_.clear();
+  buckets_.reserve(hash_table.buckets_.size());
+  buckets_.insert(buckets_.end(), hash_table.buckets_.size(), nullptr);
+
+  for (size_type bucket = 0; bucket < hash_table.buckets_.size(); ++bucket) {
+    if (Node* cur = hash_table.buckets_[bucket]) {
+      Node* copy = NewNode(cur->value);
+      buckets_[bucket] = copy;
+
+      for (Node* next = cur->next; next; cur = next, next = cur->next) {
+        copy->next = NewNode(next->value);
+        copy = copy->next; 
+      }
+    }
+  }
+  num_elements_ = hash_table.num_elements_;
 }
 
 template <class _Pair>
