@@ -118,20 +118,29 @@ template <typename Value, typename Key, typename HashFcn,
 class HashTable {
  public:
   using value_type = Value;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
+  using reference = value_type&;
+  using const_reference = const value_type&;
   using key_type = Key;
   using hash = HashFcn;
   using get_key = ExtractKey;
   using equal_key = EqualKey;
   using size_type = size_t;
 
+  using iterator = HashTableIterator<Value, Key, HashFcn, 
+                                     ExtractKey, EqualKey>;
+  using const_iterator = HashTableConstIterator<Value, Key, HashFcn, 
+                                                ExtractKey, EqualKey>;
+
   // TODO
   HashTable() {
     
   }
   
-  size_type Size() { return num_elements_; }
-  size_type Size() { return size_type(-1); }
-  bool Empty() { return Size() == 0; }
+  size_type Size() const { return num_elements_; }
+  size_type MaxSize() const { return size_type(-1); }
+  bool Empty() const { return Size() == 0; }
 
   iterator Begin() {
     for (size_type i = 0; i < buckets_.size(); ++i) {
@@ -142,17 +151,17 @@ class HashTable {
     return End();
   }
 
-  iterator End() {
-    return iterator(nullptr, this);
-  }
-
   const_iterator Begin() const {
     for (size_type i = 0; i < buckets_.size(); ++i) {
       if (buckets_[i]) {
-        return iterator(buckets_[i], this);
+        return const_iterator(buckets_[i], this);
       }
     }
     return End();
+  }
+
+  iterator End() {
+    return iterator(nullptr, this);
   }
 
   const_iterator End() const {
@@ -162,6 +171,63 @@ class HashTable {
   std::pair<iterator, bool> InsertUnique(const value_type& val) {
     Resize(num_elements_ + 1);
     return InsertUniqueNoResize(val);
+  }
+
+  template <typename ForwardIterator>
+  void InsertUnique(ForwardIterator first, ForwardIterator last) {
+    size_type n = 0;
+    std::distance(first, last, n);
+    Resize(num_elements_ + n);
+    for (; n > 0; --n, ++first) {
+      InsertUniqueNoResize(*first);
+    }
+  }
+
+  iterator Find(const key_type& key) {
+    size_type bucket = BktNum(key);
+    Node* node;
+    for (node = buckets_[bucket]; 
+         node && !key_equal(get_key(node->val), key);
+         node = node->next) {}
+    return iterator(node, this);
+  }
+
+  const_iterator Find(const key_type& key) const {
+    size_type bucket = BktNum(key);
+    const Node* node;
+    for (node = buckets_[bucket];
+         node && !key_equal(get_key(node->val), key);
+         node = node->next) {}
+    return const_iterator(node, this);
+  }
+
+  size_type Count(const key_type& key) const {
+    size_type bucket = BktNum(key);
+    Node* node;
+    size_type cnt = 0;
+    for (node = buckets_[bucket]; node; node = node->next) {
+      if (key_equals(get_key(node->val), key)) {
+        ++cnt;
+      }
+    }
+    return cnt;
+  }
+
+  size_type Erase(const key_type& key) {
+    size_type erased = 0;
+  }
+  void Erase(const iterator& iter) {
+  
+  }
+  void Erase(iterator first, iterator last) {
+  
+  }
+
+  void Erase(const const_iterator& iter) {
+  
+  }
+  void Erase(const_iiterator first, const_iterator last) {
+  
   }
 
   size_type BucketCount() const { return buckets_.size(); }
@@ -210,9 +276,8 @@ class HashTable {
        3221225473, 4294967291};
 };
 
-template <typename Value, typename Key, typename HashFcn, 
-          typename ExtractKey, typename EqualKey>
-int HashTable::NextPrime(int n) {
+template <typename Value, typename Key, typename HF, typename ExK, typename EqK>
+int HashTable<Value, Key, HF, ExK, EqK>::NextPrime(int n) const {
   const auto first = prime_list.begin();
   const auto last = prime_list.end();
   const auto pos = std::lower_bound(first, last, n);
@@ -220,9 +285,8 @@ int HashTable::NextPrime(int n) {
   return pos == last ? *(last- 1) : *pos;
 }
 
-template <typename Value, typename Key, typename HashFcn,
-          typename ExtractKey, typename EqualKey>
-void HashTable::Resize(size_type num_elements) {
+template <typename Value, typename Key, typename HF, typename ExK, typename EqK>
+void HashTable<Value, Key, HF, ExK, EqK>::Resize(size_type num_elements) {
   const size_type old_num_elements = buckets_.size();
   if (num_elements > old_num_elements) {
     const size_type n = NextPrime(old_num_elements);
@@ -245,9 +309,10 @@ void HashTable::Resize(size_type num_elements) {
   }
 }
 
-template <typename Value, typename Key, typename HashFcn,
-          typename ExtractKey, typename EqualKey>
-std::pair<iterator, bool> InsertUniqueNoResize(const value_type& val) {
+template <typename Value, typename Key, typename HF, typename ExK, typename EqK>
+std::pair<typename HashTable<Value, Key, HF, ExK, EqK>::iterator, bool> 
+HashTable<Value, Key, HF, ExK, EqK>
+    ::InsertUniqueNoResize(const value_type& val) {
   const size_type bucket = bkt_num(val);
 
   Node* first = buckets_[bucket];
