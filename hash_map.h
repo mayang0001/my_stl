@@ -258,20 +258,76 @@ class HashTable {
   }
 
   size_type Erase(const key_type& key) {
+    const size_type bucket = BktNum(key);
+    Node* first = buckets_[bucket];
+    if (first == nullptr) return 0;
+
     size_type erased = 0;
-  }
-  void Erase(const iterator& iter) {
-  
-  }
-  void Erase(iterator first, iterator last) {
-  
+    Node* cur = first;
+    Node* next = cur->next;
+    while (next) {
+      if (equal_key_(extract_key_(next->value), key)) {
+        cur->next = next->next;
+        DeleteNode(next);
+        next = cur->next;
+        ++erased;
+        --num_elements_;
+      } else {
+        cur = next;
+        next = next->next;  
+      }
+    }
+    if (equal_key_(extract_key_(first->value), key)) {
+      buckets_[bucket] = first->next;
+      DeleteNode(first);
+      ++erased;
+      --num_elements_;
+    }
+    return erased;
   }
 
-  void Erase(const const_iterator& iter) {
-  
+  iterator Erase(const iterator& iter) {
+    Node* p = iter.cur;
+    if (p == nullptr) iter; 
+
+    const size_type bucket = BktNum(p->value);
+    Node* cur = buckets_[bucket];
+    iterator ret_iter = iter;
+    if (cur == p) {
+      buckets_[bucket] = cur->next;
+      DeleteNode(cur);
+      --num_elements_;  
+      return ++ret_iter;
+    } else {
+      Node* next = cur->next;
+      while (next) {
+        if (next == p) {
+          cur->next = next->next;
+          DeleteNode(next);
+          --num_elements_;
+          return ++ret_iter;
+        }
+        cur = next;
+        next = next->next;
+      }
+    }
+    return ret_iter;
   }
-  void Erase(const_iterator first, const_iterator last) {
-  
+
+  iterator Erase(iterator first, iterator last) {
+    return ++last; 
+  }
+
+  iterator Erase(const const_iterator& iter) {
+    return Erase(iterator(const_cast<Node*>(iter->cur),
+                          const_cast<HashTable*>(iter->ht)));
+  }
+
+  iterator Erase(const_iterator first, const_iterator last) {
+    return Erase(iterator(const_cast<Node*>(first->cur),
+                          const_cast<HashTable>(first->ht)),
+                 iterator(const_cast<Node*>(last->cur),
+                          const_cast<HashTable*>(last->ht))); 
   }
 
   void Clear() {
@@ -309,6 +365,10 @@ class HashTable {
 
   size_type BktNum(const value_type& val, size_type n) const {
     return BktNum(extract_key_(val), n);
+  }
+
+  size_type BktNum(const key_type& key) const {
+    return BktNum(key, buckets_.size());
   }
 
   size_type BktNum(const key_type& key, size_type n) const {
@@ -498,12 +558,18 @@ class HashMap {
     return hash_table_.Insert(il.begin(), il.end());
   }
 
-  iterator Erase(const_iterator pos) {
-    return hash_table_.Erase(pos);
-  }
   // return the number of elements erased
   size_type Erase(const key_type& key) {
     return hash_table_.Erase(key);
+  }
+  iterator Erase(iterator pos) {
+    return hash_table_.Erase(pos);
+  }
+  iterator Erase(const_iterator pos) {
+    return hash_table_.Erase(pos);
+  }
+  iterator Erase(iterator first, iterator last) {
+    return hash_table_.Erase(first, last);
   }
   iterator Erase(const_iterator first, const_iterator last) {
     return hash_table_.Erase(first, last);
