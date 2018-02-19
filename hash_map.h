@@ -523,7 +523,12 @@ class HashMap {
   using const_reference = typename HashTable::reference;
 
   HashMap() : hash_table_(100, hasher(), extract_key(), equal_key()) {}
-        
+  HashMap(const HashMap& hm) = default;
+  HashMap& operator=(const HashMap& hm) = default;
+  HashMap(HashMap&& hm) = default;
+  HashMap& operator=(HashMap&& hm) = default;
+  ~HashMap() = default;
+
   bool Empty() const { return hash_table_.Empty(); }
   size_type Size() const { return hash_table_.Size(); }
   size_type MaxSize() const { return hash_table_.MaxSize(); }
