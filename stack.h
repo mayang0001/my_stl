@@ -1,6 +1,8 @@
 #ifndef STACK_H_
 #define STACK_H_
 
+#include <queue>
+
 template <typename T, typename Container = std::deque<T>>
 class Stack {
  public:
@@ -10,8 +12,9 @@ class Stack {
   using size_type = typename Container::size_type;
   using container_type = Container;
 
-  //TODO constructor
-  explicit Stack(const container_type& container);
+  explicit Stack(const container_type& container) {
+    container_ = container;
+  }
   explicit Stack(container_type&& container = container_type()) {
     container_ = std::move(container);
   }
@@ -20,7 +23,7 @@ class Stack {
   bool Empty() const { return container_.empty(); }
 
   void Push(const T& val) { container_.push_back(val); }
-  void Push(P&& val) { container_.push_back(std::move(val)); }
+  void Push(T&& val) { container_.push_back(std::move(val)); }
   template <typename... Args>
   void Emplace(Args&&... args) {
     container_.emplace_back(std::forward<Args>(args)...);
