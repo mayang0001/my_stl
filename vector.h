@@ -10,13 +10,14 @@ template<typename T>
 class Vector {
 public:
   using value_type = T;
-  using pointer = T*;
-  using reference = T&;
-  using const_reference = const T&;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using iterator = value_type*;
+  using const_iterator = const value_type*;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
-  using iterator = T*;
-  using const_iterator = const T*;
 
 public:
   Vector() 
