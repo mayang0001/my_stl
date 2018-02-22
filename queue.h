@@ -86,4 +86,50 @@ void PopHeap(RandomAccessIterator first, Distance hole_idx, Distance len,
   *(first + hole_idx) = value;
 }
 
+template <typename T, typename Container = std::vector<T>, 
+          typename Compare = std::less<T>>
+class PriorityQueue {
+ public:
+  using value_type = typename Container::value_type;
+  using size_type = typename Container::size_type;
+  using reference = typename Container::reference;
+  using const_reference = typename Container::const_reference;
+  using container_type = Container;
+
+  explicit PriorityQueue(const container_type& container) {
+    container_ = container;
+  }
+  explicit PriorityQueue(container_type&& container = container_type()) {
+    container_ = std::move(container);
+  }
+
+  bool Empty() const { return container_.empty(); }
+  size_type Size() const { return container_.size(); }
+
+  reference Top() { return container_.front(); }
+  const_reference Top() const { return container_.front(); }
+
+  void Push(const value_type& value) {
+    container_.push_back(value);
+    PushHeap(container_.begin(), container_.end());
+  }
+  void Push(value_type&& value) {
+    container_.push_back(std::move(value));
+    PushHeap(container_.begin(), container_.end());
+  }
+  template <typename... Args>
+  void Emplace(Args&&... args) {
+    container_.emplace_back(std::forward<Args>(args)...);
+    PushHeap(container_.begin(), container_.end());
+  }
+
+  void Pop() {
+    PopHeap(container_.begin(), container_.end());
+    container_.PopBack();
+  }
+
+ private:
+  container_type container_;
+  Compare comp_;
+};
 #endif // QUEUE_H_
