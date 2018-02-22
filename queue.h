@@ -58,4 +58,32 @@ void PushHeap(RandomAccessIterator first, Distance hole_idx, Distance top_idx,
   *(first + hole_idx) = value;
 }
 
+template <typename RandomAccessIterator>
+void PopHeap(RandomAccessIterator first, RandomAccessIterator last) {
+  PopHeap(first, 0, last - first - 1, *(last - 1));
+}
+
+template <typename RandomAccessIterator, typename T>
+void PopHeap(RandomAccessIterator first, Distance hole_idx, Distance len,
+             const T& value) {
+  *(first + len) = *first;
+
+  // set to right child
+  Distance child = hole_idx * 2 + 2;
+  while (child < len) {
+    if (*(first + child) < *(first + (child - 1))) {
+      --child; 
+    }
+  
+    if (value > *(first + child)) {
+      break;
+    } else {
+      *(first + hole_idx) = *(first + child);
+    }
+    hole_idx = child;
+    child = hole_idx * 2 + 2;
+  }
+  *(first + hole_idx) = value;
+}
+
 #endif // QUEUE_H_
