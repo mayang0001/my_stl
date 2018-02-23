@@ -1,3 +1,6 @@
+#ifndef ITERATOR_H_
+#define ITERATOR_H_
+
 template <typename Iterator>
 struct iterator_traits {
   using iterator_category = typename Iterator::iterator_category;
@@ -24,3 +27,5 @@ struct iterator_traits<const T*> {
   using reference = const T&;
   using pointer = const T*;
 };
+
+#endif // ITERATOR_H_
