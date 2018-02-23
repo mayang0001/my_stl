@@ -41,11 +41,6 @@ class Queue {
 
 // Functions for priority_queue
 
-template <typename RandomAccessIterator>
-void PushHeap(RandomAccessIterator first, RandomAccessIterator last) {
-  PushHeap(first, (last - first - 1), 0, *(last - 1));
-}
-
 template <typename RandomAccessIterator, typename Distance, typename T>
 void PushHeap(RandomAccessIterator first, Distance hole_idx, Distance top_idx, 
               const T& value) {
@@ -59,11 +54,16 @@ void PushHeap(RandomAccessIterator first, Distance hole_idx, Distance top_idx,
 }
 
 template <typename RandomAccessIterator>
-void PopHeap(RandomAccessIterator first, RandomAccessIterator last) {
-  PopHeap(first, 0, last - first - 1, *(last - 1));
+void PushHeap(RandomAccessIterator first, RandomAccessIterator last) {
+  // raw pointer has no difference_type, so using iterator_traits to traits
+  //using distance_type = typename RandomAccessIterator::distance_type;
+  using distance_type = typename std::iterator_traits<RandomAccessIterator>::difference_type;
+  distance_type hole_idx(last - first - 1);
+  distance_type top_idx(0);
+  PushHeap(first, hole_idx, top_idx, *(last - 1));
 }
 
-template <typename RandomAccessIterator, typename T>
+template <typename RandomAccessIterator, typename Distance, typename T>
 void PopHeap(RandomAccessIterator first, Distance hole_idx, Distance len,
              const T& value) {
   *(first + len) = *first;
@@ -84,6 +84,14 @@ void PopHeap(RandomAccessIterator first, Distance hole_idx, Distance len,
     child = hole_idx * 2 + 2;
   }
   *(first + hole_idx) = value;
+}
+
+template <typename RandomAccessIterator>
+void PopHeap(RandomAccessIterator first, RandomAccessIterator last) {
+  using distance_type = typename std::iterator_traits<RandomAccessIterator>::difference_type;
+  distance_type hole_idx(0);
+  distance_type len(last - first - 1);
+  PopHeap(first, hole_idx, len, *(last - 1));
 }
 
 template <typename T, typename Container = std::vector<T>, 
@@ -125,7 +133,7 @@ class PriorityQueue {
 
   void Pop() {
     PopHeap(container_.begin(), container_.end());
-    container_.PopBack();
+    container_.pop_back();
   }
 
  private:
