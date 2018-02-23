@@ -314,8 +314,24 @@ class HashTable {
     return ret_iter;
   }
 
-  iterator Erase(iterator first, iterator last) {
-    return ++last; 
+  iterator Erase(const iterator& first, const iterator& last) {
+    if (first == last) return last;
+
+    size_type f_bucket = first.cur ? BktNum(first.cur->value) : buckets_.size();
+    size_type l_bucket = last.cur ? BktNum(last.cur->value) : buckets_.size();
+
+    if (f_bucket == l_bucket) {
+      EraseBucket(f_bucket, first.cur, last.cur);
+    } else {
+      EraseBucket(f_bucket, first.cur, nullptr);
+      for (size_type bucket = f_bucket + 1; bucket < l_bucket; ++bucket) {
+        EraseBucket(bucket, buckets_[bucket], nullptr);
+      }
+      if (l_bucket != buckets_.size()) {
+        EraseBucket(l_bucket, buckets_[l_bucket], last.cur);
+      }
+    }
+    return last;
   }
 
   iterator Erase(const const_iterator& iter) {
@@ -373,6 +389,31 @@ class HashTable {
 
   size_type BktNum(const key_type& key, size_type n) const {
     return hash_fcn_(key) % n;
+  }
+
+  void EraseBucket(size_type bucket, Node* first, Node* last) {
+    if (buckets_[bucket] == first) {
+      Node* cur = buckets_[bucket];
+      while (cur != last) {
+        DeleteNode(cur);
+        --num_elements_;
+        cur = cur->next;
+      }
+      buckets_[bucket] = last;
+    } else {
+      Node* cur = buckets_[bucket];
+      Node* next = cur->next;
+      while (next && next != first) {
+        cur = next;
+        next = cur->next;
+      }
+      while (next != last) {
+        DeleteNode(next);
+        next = next->next;
+        --num_elements_;
+      }
+      cur->next = last;
+    }
   }
 
   void Resize(size_type num_elements);
