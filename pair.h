@@ -1,6 +1,8 @@
 #ifndef PAIR_H_
 #define PAIR_H_
 
+namespace my {
+
 template <typename T1, typename T2>
 struct Pair {
   using first_type = T1;
@@ -53,4 +55,6 @@ Pair<T1, T2> MakePair(T1&& a, T2&& b) {
   return Pair<T1, T2>(std::move(a), std::move(b));
 }
 
-#endif
+} // namespace my
+
+#endif // PAIR_H_
