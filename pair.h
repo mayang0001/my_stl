@@ -20,11 +20,12 @@ struct Pair {
   Pair(Pair&& p) = default;
 
   // TODO Why This
-  Pair(const first_type& a, const second_type& b)
-      : first(a), second(b) {}
+  //Pair(const first_type& a, const second_type& b)
+  //    : first(a), second(b) {}
   template <typename U, typename V>
   Pair(U&& a, V&& b)
-      : first(std::move(a)), second(std::move(b)) { std::cout << "lll" << std::endl; }
+      : first(std::forward<U>(a)), second(std::forward<V>(b)) {}
+      //: first(std::move<U>(a)), second(std::move<V>(b)) {}
   
   // Why dont use = default
   //Pair& operator=(const Pair& p) = default;
@@ -52,7 +53,8 @@ struct Pair {
 template <typename T1, typename T2>
 Pair<T1, T2> MakePair(T1&& a, T2&& b) {
 //Pair<V1, V2> MakePair(T1&& a, T2&& b) {
-  return Pair<T1, T2>(std::move(a), std::move(b));
+//  return Pair<T1, T2>(std::move(a), std::move(b));
+  return Pair<T1, T2>(std::forward<T1>(a), std::forward<T2>(b));
 }
 
 } // namespace my
