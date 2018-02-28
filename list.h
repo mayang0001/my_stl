@@ -69,10 +69,14 @@ template <typename T, typename Alloc = std::allocator>
 class List {
 public:
   using value_type = T;
-  using reference = T&;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
   using size_type = size_t;
-  using iterator = ListIterator<T, T&, T*>; 
-  using const_iterator = ListIterator<T, const T&, const T*>; 
+  using difference_type = ptrdiff_t;
+  using iterator = ListIterator<value_type, reference, pointer>; 
+  using const_iterator = ListIterator<value_type, const_reference, const_pointer>; 
 private:
   using Node = ListNode<T>;
   using allocator_type = Alloc<Node>;
@@ -80,7 +84,7 @@ private:
 public:
 
   explicit List(const allocator_type& alloc = allocate_type()) { 
-    empty_initialize(); 
+    InitializeEmpty(); 
   }
 
   explicit List(size_type n) {
@@ -93,7 +97,7 @@ public:
   }
 
   List(std::initializer_list<T> il) {
-    empty_initialize();
+    InitializeEmpty();
     for (auto i : il) {
       insert(end(), i);
     }
@@ -102,7 +106,7 @@ public:
   template <typename InputIterator>
   List(InputIterator first, InputIterator last,
        const allocator_type& alloc = allocate_type()) {
-    empty_initialize();
+    InitializeEmpty();
     auto iter = first;
     while (iter != last) {
       insert(end(), *iter);
@@ -111,14 +115,14 @@ public:
   }
 
   List(const List& list) {
-    empty_initialize();
+    InitializeEmpty();
     for (auto iter = list.begin(); iter != list.end(); ++iter) {
       insert(end(), *iter);
     } 
   }
 
   List(const List& list, const allocator_type& alloc = allocate_type()) {
-    empty_initialize();
+    InitializeEmpty();
     for (auto iter = list.begin(); iter != list.end(); ++iter) {
       insert(end(), *iter);
     } 
@@ -144,7 +148,7 @@ public:
     if (node != list.node) {
       Clear();
       node = list.node;
-      list.empty_initialize();
+      list.InitializeEmpty();
     }  
     return *this;
   }
