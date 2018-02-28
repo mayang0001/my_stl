@@ -4,17 +4,17 @@
 namespace my {
 
 template <typename T>
-inline const T& max(const T& a, const T& b) {
+inline const T& Max(const T& a, const T& b) {
   return a < b ? b : a;
 }
 
 template <typename T, typename Functor>
-inline const T& max(const T& a, const T& b, Functor compare) {
+inline const T& Max(const T& a, const T& b, Functor compare) {
   return compare(a < b) ? b : a;
 }
 
 template <typename InputIterator, typename T>
-T accumulate(InputIterator begin, InputIterator end, T init) {
+T Accumulate(InputIterator begin, InputIterator end, T init) {
   for (; begin != end; ++begin) {
     init = init + *begin;
   }
@@ -22,7 +22,7 @@ T accumulate(InputIterator begin, InputIterator end, T init) {
 }
 
 template <typename InputIterator, typename T, typename Functor>
-T accumulate(InputIterator begin, InputIterator end, T init, Functor binary_op) {
+T Accumulate(InputIterator begin, InputIterator end, T init, Functor binary_op) {
   for (; begin != end; ++begin) {
     init = binary_op(init, *begin);
   }
@@ -30,7 +30,7 @@ T accumulate(InputIterator begin, InputIterator end, T init, Functor binary_op) 
 }
 
 template<typename InputIterator, typename T> 
-InputIterator find(InputIterator begin, InputIterator end, const T& value) {
+InputIterator Find(InputIterator begin, InputIterator end, const T& value) {
   while (begin != end && *begin != value) {
     ++begin;
   }
@@ -38,7 +38,7 @@ InputIterator find(InputIterator begin, InputIterator end, const T& value) {
 }
 
 template<typename InputIterator, typename Function>
-Function for_each(InputIterator begin, InputIterator end, Function func) {
+Function ForEach(InputIterator begin, InputIterator end, Function func) {
   for (; begin != end; ++begin) {
     func(*begin);
   }
@@ -47,7 +47,7 @@ Function for_each(InputIterator begin, InputIterator end, Function func) {
 
 template<typename InputIterator, typename OutputIterator, 
          typename UnaryOperation>
-OutputIterator transform(InputIterator begin, InputIterator end,
+OutputIterator Transform(InputIterator begin, InputIterator end,
                          OutputIterator result, UnaryOperation op) {
 
 }
@@ -71,7 +71,7 @@ __Distance(RandomAccessIterator begin, RandomAccessIterator end, std::random_acc
 
 template <typename InputIterator>
 typename std::iterator_traits<InputIterator>::difference_type
-distance(InputIterator begin, InputIterator end) {
+Distance(InputIterator begin, InputIterator end) {
   typedef typename std::iterator_traits<InputIterator>::iterator_category category;
   //distance(begin, end, category);
   return __Distance(begin, end, category());
@@ -103,7 +103,7 @@ void __Advance(RandomAccessIterator& i, Distance n, std::random_access_iterator_
 }
 
 template <typename InputIterator, typename Distance>
-void advance(InputIterator& i, Distance n) {
+void Advance(InputIterator& i, Distance n) {
   typedef typename std::iterator_traits<InputIterator>::iterator_category category;
   return __Advance(i, n, category());
 }
