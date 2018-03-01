@@ -325,12 +325,18 @@ public:
 
 private:
   void InitializeEmpty() {
-    Node* tmp = CreateNode();
-    node_->next = tmp;
-    node_->prev = tmp;
+    node_ = CreateNode();
+    node_->next = node_;
+    node_->prev = node_;
   }
 
-  Node* CreateNode(const value_type& val = value_type()) {
+  Node* CreateNode() {
+    Node* tmp = alloc_.allocate(1);
+    alloc_.construct(&tmp->data); 
+    return tmp;
+  }
+
+  Node* CreateNode(const value_type& val) {
     Node* tmp = alloc_.allocate(1);
     alloc_.construct(&tmp->data, val); 
     return tmp;
