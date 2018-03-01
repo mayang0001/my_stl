@@ -65,6 +65,11 @@ struct ListIterator {
   }
 };
 
+template <typename T, typename Alloc>
+struct AllocTraits {
+  using allocator_type = typename Alloc::template rebind<T>::other;
+};
+
 template <typename T, typename Alloc = std::allocator<T>>
 class List {
 public:
@@ -79,7 +84,8 @@ public:
   using const_iterator = ListIterator<value_type, const_reference, const_pointer>; 
 private:
   using Node = ListNode<T>;
-  using allocator_type = Alloc<Node>;
+  using allocator_type = 
+      typename AllocTraits<Node, Alloc>::allocator_type;
 
 public:
 
