@@ -65,7 +65,7 @@ struct ListIterator {
   }
 };
 
-template <typename T, typename Alloc = std::allocator>
+template <typename T, typename Alloc = std::allocator<T>>
 class List {
 public:
   using value_type = T;
@@ -83,48 +83,49 @@ private:
 
 public:
 
-  explicit List(const allocator_type& alloc = allocate_type()) { 
+  explicit List(const allocator_type& alloc = allocator_type()) 
+      : alloc_(alloc) {
     InitializeEmpty(); 
   }
 
   explicit List(size_type n) {
-  
-  }
-
-  List(size_type n, const value_type& val, i
-       const allocator_type& alloc = allocate_type()) {
-  
-  }
-
-  List(std::initializer_list<T> il) {
     InitializeEmpty();
-    for (auto i : il) {
-      insert(end(), i);
+    for ( ; n > 0; --n) {
+      Insert(Begin(), value_type());
+    } 
+  }
+
+  List(size_type n, const value_type& val,
+       const allocator_type& alloc = allocator_type()) 
+     : alloc_(alloc) {
+    InitializeEmpty();
+    for (; n > 0; --n) {
+      Insert(Begin(), val);
     }
   }
 
   template <typename InputIterator>
   List(InputIterator first, InputIterator last,
-       const allocator_type& alloc = allocate_type()) {
+       const allocator_type& alloc = allocator_type()) 
+      : alloc_(alloc) {
     InitializeEmpty();
-    auto iter = first;
-    while (iter != last) {
-      insert(end(), *iter);
-      ++iter;
+    for(; first != last; ++first) {
+      Insert(End(), *first);
     }
   }
 
   List(const List& list) {
     InitializeEmpty();
-    for (auto iter = list.begin(); iter != list.end(); ++iter) {
-      insert(end(), *iter);
+    for (auto iter = list.Begin(); iter != list.End(); ++iter) {
+      Insert(Begin(), *iter);
     } 
   }
 
-  List(const List& list, const allocator_type& alloc = allocate_type()) {
+  List(const List& list, const allocator_type& alloc) 
+      : alloc_(alloc) {
     InitializeEmpty();
-    for (auto iter = list.begin(); iter != list.end(); ++iter) {
-      insert(end(), *iter);
+    for (auto iter = list.Begin(); iter != list.End(); ++iter) {
+      Insert(Begin(), *iter);
     } 
   }
 
@@ -136,71 +137,78 @@ public:
   
   }
 
-  //List(List&& list, const allocator_type& alloc = allocate_type()) {
+  //List(List&& list, const allocator_type& alloc = allocator_type()) {
   //
   //}
+
+  List(std::initializer_list<value_type> il, 
+       const allocator_type& alloc = allocator_type()) 
+      : alloc_(alloc) {
+    InitializeEmpty();
+    Insert(Begin(), il.begin(), il.end()); 
+  }
 
   List& operator=(const List& list) {
   
   }
 
   List& operator=(List&& list) {
-    if (node != list.node) {
+    if (node_ != list.node_) {
       Clear();
-      node = list.node;
+      node_ = list.node_;
       list.InitializeEmpty();
     }  
     return *this;
   }
 
-  List& operator=(std::initialize_list<value_type> il) {
+  List& operator=(std::initializer_list<value_type> il) {
   
   }
 
   void push_back(const T& val) {
-    insert(end(), val);
+    Insert(End(), val);
   }
   
   void push_back(T&& val) {
-    insert(end(), std::move(val));
+    Insert(End(), std::move(val));
   }
   
   template <typename... Args>
   void emplace_back(Args&&... args) {
-    insert(end(), std::forward<Args>(args)...); 
+    Insert(End(), std::forward<Args>(args)...); 
   }
 
   template <typename... Args>
   void emplace_front(Args&& ...args) {
-    insert(begin(), std::forward<Args>(args)...); 
+    Insert(Begin(), std::forward<Args>(args)...); 
   }
 
   void push_front(const T& val) {
-    insert(begin(), val);
+    Insert(Begin(), val);
   }
 
   void push_front(T&& val) {
-    insert(begin(), std::move(val));
+    Insert(Begin(), std::move(val));
   }
 
   void pop_back() {
-    // erase(--end());
-    iterator tmp = end();
+    // erase(--End());
+    iterator tmp = End();
     erase(--tmp);
   }
 
   void pop_front() {
-    erase(begin()); 
+    erase(Begin()); 
   }
 
   void Clear() {
-    auto iter = begin();
-    while (iter != end()) {
+    auto iter = Begin();
+    while (iter != End()) {
       iter = erase(iter);
     }
   }
 
-  iterator insert(const_iterator position, const T& val) {
+  iterator Insert(const_iterator position, const T& val) {
     Node* tmp = CreateNode(val);
     tmp->next = position.node;
     tmp->prev = position.node->prev;
@@ -209,23 +217,23 @@ public:
     return iterator(tmp);
   }
 
-  iterator insert(const_iterator position, size_type n, const T& val) {
+  iterator Insert(const_iterator position, size_type n, const T& val) {
     for (size_type i = 0; i < n; ++i) {
-      position = insert(position, val);
+      position = Insert(position, val);
     }
     return position;
   }
 
   template <typename InputIterator>
-  iterator insert(const_iterator position, InputIterator first, 
+  iterator Insert(const_iterator position, InputIterator first, 
                   InputIterator last) {
     for (; first != last; ++first) {
-      position = insert(position, *iter);
+      position = Insert(position, *first);
     } 
     return position;
   }
 
-  iterator insert(const_iterator position, value_type&& val) {
+  iterator Insert(const_iterator position, value_type&& val) {
     Node* tmp = CreateNode(std::move(val));
     tmp->next = position.node;
     tmp->prev = position.node->prev;
@@ -234,12 +242,13 @@ public:
     return tmp;
   }
   
-  iterator insert(const_iterator position, std::initializer<value_type> il) {
-    return insert(position, il.begin(), il.end());
+  iterator Insert(const_iterator position, 
+                  std::initializer_list<value_type> il) {
+    return Insert(position, il.begin(), il.end());
   }
 
   //template <typename... Args>
-  //iterator insert(const_iterator position, Args&&...  args) {
+  //iterator Insert(const_iterator position, Args&&...  args) {
   //  Node* tmp = CreateNode(std::forward<Args>(args)...);
   //  tmp->next = position.node;
   //  tmp->prev = position.node->prev;
@@ -264,16 +273,16 @@ public:
     return iter;
   }
 
-  iterator Begin() { return node->next; }
-  const_iterator Begin() const { return node->next; }
-  const_iterator Cbegin() const { return node->next; }
-  iterator End() { return node; }
-  const_iterator End() const { return node; }
-  const_iterator Cend() const { return node; }
+  iterator Begin() { return node_->next; }
+  const_iterator Begin() const { return node_->next; }
+  const_iterator Cbegin() const { return node_->next; }
+  iterator End() { return node_; }
+  const_iterator End() const { return node_; }
+  const_iterator Cend() const { return node_; }
 
-  bool Empty() const { return node == node->next; }
+  bool Empty() const { return node_ == node_->next; }
   size_type Size() const {
-    size_type result = std::distance(begin(), end());
+    size_type result = std::distance(Begin(), End());
     return result;  
   }
 
@@ -288,10 +297,10 @@ public:
   void Unique() {}
   template <typename BinaryPredict>
   void Unique(BinaryPredict binary_pred) {}
-  void merge(list& x);
-  void merge(list&& x);
+  void merge(List& x);
+  void merge(List&& x);
   template <typename Compare>
-  void Merge(list& x, Compare comp);
+  void Merge(List& x, Compare comp);
   template <typename Compare>
   void Merge(List&& x, Compare comp);
   void Sort();
@@ -301,32 +310,32 @@ public:
 
 private:
   void InitializeEmpty() {
-    node_ = CreateNode();
-    node->next = node;
-    node->prev = node;
+    Node* tmp = CreateNode();
+    node_->next = tmp;
+    node_->prev = tmp;
   }
 
   Node* CreateNode(const value_type& val = value_type()) {
-    Node* p = alloc_.allocate(1);
-    alloc.construct(&p->data, val); 
-    return p;
+    Node* tmp = alloc_.allocate(1);
+    alloc_.construct(&tmp->data, val); 
+    return tmp;
   }
 
   Node* CreateNode(value_type&& val) {
-    Node* p = alloc_.allocate(1);
-    alloc.construct(&p->data, std::move(val)); 
-    return p;
+    Node* tmp = alloc_.allocate(1);
+    alloc_.construct(&tmp->data, std::move(val)); 
+    return tmp;
   }
 
   template <typename... Args>
   Node* CreateNode(Args&&... args) {
-    Node* p = alloc_.allocate(1);
-    alloc.construct(&p->data, std::forward<Args>(args)...);
+    Node* tmp = alloc_.allocate(1);
+    alloc_.construct(&tmp->data, std::forward<Args>(args)...);
   }
 
   void DestroyNode(Node* p) {
-    alloc.destroy(p);
-    alloc.deallocate(p, 1);
+    alloc_.destroy(p);
+    alloc_.deallocate(p, 1);
   }
 
   allocator_type alloc_;
