@@ -36,11 +36,15 @@ struct ListIterator {
   ListIterator(Node* x) { node = x; }
   ListIterator(const ListIterator& x) { node = x.node; }
 
+  //const_iterator& operator=(const iterator& iter) {
+  //  return const_iterator(iter.node); 
+  //}
+
   bool operator==(const ListIterator& x) { return node == x.node; }
   bool operator!=(const ListIterator& x) { return node != x.node; }
 
-  T& operator*() const { return node->data; }
-  T* operator->() const { return &(node->data); }
+  reference operator*() const { return node->data; }
+  pointer operator->() const { return &(node->data); }
 
   Self& operator++() {
     node = node->next;
@@ -106,7 +110,7 @@ public:
      : alloc_(alloc) {
     InitializeEmpty();
     for (; n > 0; --n) {
-      Insert(Begin(), val);
+      Insert(Begin(), n, val);
     }
   }
 
@@ -214,7 +218,8 @@ public:
     }
   }
 
-  iterator Insert(const_iterator position, const T& val) {
+  //iterator Insert(const_iterator position, const value_type& val) {
+  iterator Insert(iterator position, const value_type& val) {
     Node* tmp = CreateNode(val);
     tmp->next = position.node;
     tmp->prev = position.node->prev;
@@ -223,7 +228,8 @@ public:
     return iterator(tmp);
   }
 
-  iterator Insert(const_iterator position, size_type n, const T& val) {
+  //iterator Insert(const_iterator position, size_type n, const T& val) {
+  iterator Insert(iterator position, size_type n, const T& val) {
     for (size_type i = 0; i < n; ++i) {
       position = Insert(position, val);
     }
@@ -231,7 +237,8 @@ public:
   }
 
   template <typename InputIterator>
-  iterator Insert(const_iterator position, InputIterator first, 
+  //iterator Insert(const_iterator position, InputIterator first, 
+  iterator Insert(iterator position, InputIterator first, 
                   InputIterator last) {
     for (; first != last; ++first) {
       position = Insert(position, *first);
@@ -239,7 +246,8 @@ public:
     return position;
   }
 
-  iterator Insert(const_iterator position, value_type&& val) {
+  //iterator Insert(const_iterator position, value_type&& val) {
+  iterator Insert(iterator position, value_type&& val) {
     Node* tmp = CreateNode(std::move(val));
     tmp->next = position.node;
     tmp->prev = position.node->prev;
@@ -248,7 +256,8 @@ public:
     return tmp;
   }
   
-  iterator Insert(const_iterator position, 
+  //iterator Insert(const_iterator position, 
+  iterator Insert(iterator position, 
                   std::initializer_list<value_type> il) {
     return Insert(position, il.begin(), il.end());
   }
