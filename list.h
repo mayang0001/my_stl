@@ -36,6 +36,7 @@ struct ListIterator {
   ListIterator(Node* x) { node = x; }
   ListIterator(const ListIterator& x) { node = x.node; }
 
+  // TODO how to convert iterator to const_iterator
   //const_iterator& operator=(const iterator& iter) {
   //  return const_iterator(iter.node); 
   //}
@@ -69,6 +70,16 @@ struct ListIterator {
   }
 };
 
+// A toy version of allocator rebind
+//template <typename T>
+//class allocator {
+// public:
+//  template <typename U>
+//  struct rebind {
+//    using other = allocator<U>;
+//  };
+//};
+
 template <typename T, typename Alloc>
 struct AllocTraits {
   using allocator_type = typename Alloc::template rebind<T>::other;
@@ -76,7 +87,7 @@ struct AllocTraits {
 
 template <typename T, typename Alloc = std::allocator<T>>
 class List {
-public:
+ public:
   using value_type = T;
   using reference = value_type&;
   using const_reference = const value_type&;
@@ -86,13 +97,12 @@ public:
   using difference_type = ptrdiff_t;
   using iterator = ListIterator<value_type, reference, pointer>; 
   using const_iterator = ListIterator<value_type, const_reference, const_pointer>; 
-private:
+ private:
   using Node = ListNode<T>;
   using allocator_type = 
       typename AllocTraits<Node, Alloc>::allocator_type;
 
-public:
-
+ public:
   explicit List(const allocator_type& alloc = allocator_type()) 
       : alloc_(alloc) {
     InitializeEmpty(); 
@@ -175,40 +185,40 @@ public:
   
   }
 
-  void push_back(const T& val) {
+  template <typename... Args>
+  void EmplaceFront(Args&& ...args) {
+    Insert(Begin(), std::forward<Args>(args)...); 
+  }
+
+  void PushFront(const T& val) {
+    Insert(Begin(), val);
+  }
+
+  void PushFront(T&& val) {
+    Insert(Begin(), std::move(val));
+  }
+
+  void PushBack(const T& val) {
     Insert(End(), val);
   }
   
-  void push_back(T&& val) {
+  void PushBack(T&& val) {
     Insert(End(), std::move(val));
   }
   
   template <typename... Args>
-  void emplace_back(Args&&... args) {
+  void EmplaceBack(Args&&... args) {
     Insert(End(), std::forward<Args>(args)...); 
   }
 
-  template <typename... Args>
-  void emplace_front(Args&& ...args) {
-    Insert(Begin(), std::forward<Args>(args)...); 
+  void PopFront() {
+    erase(Begin()); 
   }
 
-  void push_front(const T& val) {
-    Insert(Begin(), val);
-  }
-
-  void push_front(T&& val) {
-    Insert(Begin(), std::move(val));
-  }
-
-  void pop_back() {
+  void PopBack() {
     // erase(--End());
     iterator tmp = End();
     erase(--tmp);
-  }
-
-  void pop_front() {
-    erase(Begin()); 
   }
 
   void Clear() {
@@ -276,7 +286,7 @@ public:
     Node* prev_node = position.node->prev;
     next_node->prev = prev_node;
     prev_node->next = next_node;
-    destroy_node(position.node);
+    DestroyNode(position.node);
     return next_node;
   }
 
@@ -343,6 +353,7 @@ private:
   }
 
   Node* CreateNode(value_type&& val) {
+    std::cout << "move create node is called" << std::endl;
     Node* tmp = alloc_.allocate(1);
     alloc_.construct(&tmp->data, std::move(val)); 
     return tmp;
