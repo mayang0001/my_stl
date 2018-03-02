@@ -75,7 +75,7 @@ template <typename T, typename Ref, typename Ptr>
 struct ListConstIterator {
   using iterator = ListIterator<T, T&, T*>;
   using const_iterator = ListConstIterator<T, const T&, const T*>;
-  using Self = ListIterator<T, Ref, Ptr>;
+  using Self = ListConstIterator<T, Ref, Ptr>;
 
   using value_type = T;
   using reference = Ref;
@@ -86,7 +86,7 @@ struct ListConstIterator {
 
   using Node = ListNode<T>;
 
-  const Node* node;
+  Node* node;
   
   ListConstIterator() { node = nullptr; }
   ListConstIterator(Node* x) { node = x; }
@@ -281,28 +281,35 @@ class List {
   }
 
   iterator Insert(const_iterator position, const value_type& val) {
-    Node* tmp = CreateNode(val);
-    tmp->next = position.node;
-    tmp->prev = position.node->prev;
-    position.node->prev->next = tmp;
-    position.node->prev = tmp;
-    return iterator(tmp);
+    using deleter_type = std::function<void(Node*)>;
+    deleter_type deleter = [this](Node* node) {
+      alloc_.deallocate(node, 1);
+    };
+    std::unique_ptr<Node, deleter_type> hold(alloc_.allocate(1), deleter);
+    alloc_.construct(&hold->data, val);
+    hold->next = position.node;
+    hold->prev = position.node->prev;
+    position.node->prev->next = hold.get();
+    position.node->prev = hold.get();
+    return iterator(hold.release());
   }
 
   iterator Insert(const_iterator position, size_type n, const T& val) {
+    iterator ret(position.node);
     for (size_type i = 0; i < n; ++i) {
       position = Insert(position, val);
     }
-    return position;
+    return ret;
   }
 
   template <typename InputIterator>
   iterator Insert(const_iterator position, InputIterator first, 
                   InputIterator last) {
+    iterator ret(position.node);
     for (; first != last; ++first) {
       position = Insert(position, *first);
     } 
-    return position;
+    return ret;
   }
 
   iterator Insert(const_iterator position, value_type&& val) {
