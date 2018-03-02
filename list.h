@@ -16,9 +16,15 @@ struct ListNode {
 };
 
 template <typename T, typename Ref, typename Ptr>
+struct ListIterator;
+
+template <typename T, typename Ref, typename Ptr>
+struct ListConstIterator;
+
+template <typename T, typename Ref, typename Ptr>
 struct ListIterator {
   using iterator = ListIterator<T, T&, T*>;
-  using const_iterator = ListIterator<T, const T&, const T*>;
+  using const_iterator = ListConstIterator<T, const T&, const T*>;
   using Self = ListIterator<T, Ref, Ptr>;
 
   using value_type = T;
@@ -36,13 +42,59 @@ struct ListIterator {
   ListIterator(Node* x) { node = x; }
   ListIterator(const ListIterator& x) { node = x.node; }
 
-  // TODO how to convert iterator to const_iterator
-  //const_iterator& operator=(const iterator& iter) {
-  //  return const_iterator(iter.node); 
-  //}
+  bool operator==(const ListIterator& x) const { return node == x.node; }
+  bool operator!=(const ListIterator& x) const { return node != x.node; }
 
-  bool operator==(const ListIterator& x) { return node == x.node; }
-  bool operator!=(const ListIterator& x) { return node != x.node; }
+  reference operator*() const { return node->data; }
+  pointer operator->() const { return &(node->data); }
+
+  Self& operator++() {
+    node = node->next;
+    return *this;
+  }
+
+  Self operator++(int) {
+    Self temp = *this;
+    ++*this;
+    return temp;
+  }
+
+  Self& operator--() {
+    node = node->prev;
+    return *this;
+  }
+
+  Self operator--(int) {
+    Self temp = *this;
+    --*this;
+    return temp;
+  }
+};
+
+template <typename T, typename Ref, typename Ptr>
+struct ListConstIterator {
+  using iterator = ListIterator<T, T&, T*>;
+  using const_iterator = ListConstIterator<T, const T&, const T*>;
+  using Self = ListIterator<T, Ref, Ptr>;
+
+  using value_type = T;
+  using reference = Ref;
+  using pointer = Ptr;
+  using difference_type = ptrdiff_t;
+  using size_type = size_t;
+  using iterator_category = std::bidirectional_iterator_tag; 
+
+  using Node = ListNode<T>;
+
+  const Node* node;
+  
+  ListConstIterator() { node = nullptr; }
+  ListConstIterator(Node* x) { node = x; }
+  ListConstIterator(const iterator& x) { node = x.node; }
+  ListConstIterator(const ListConstIterator& x) { node = x.node; }
+
+  bool operator==(const ListConstIterator& x) const { return node == x.node; }
+  bool operator!=(const ListConstIterator& x) const { return node != x.node; }
 
   reference operator*() const { return node->data; }
   pointer operator->() const { return &(node->data); }
@@ -96,7 +148,7 @@ class List {
   using size_type = size_t;
   using difference_type = ptrdiff_t;
   using iterator = ListIterator<value_type, reference, pointer>; 
-  using const_iterator = ListIterator<value_type, const_reference, const_pointer>; 
+  using const_iterator = ListConstIterator<value_type, const_reference, const_pointer>; 
  private:
   using Node = ListNode<T>;
   using allocator_type = 
@@ -228,8 +280,7 @@ class List {
     }
   }
 
-  //iterator Insert(const_iterator position, const value_type& val) {
-  iterator Insert(iterator position, const value_type& val) {
+  iterator Insert(const_iterator position, const value_type& val) {
     Node* tmp = CreateNode(val);
     tmp->next = position.node;
     tmp->prev = position.node->prev;
@@ -238,8 +289,7 @@ class List {
     return iterator(tmp);
   }
 
-  //iterator Insert(const_iterator position, size_type n, const T& val) {
-  iterator Insert(iterator position, size_type n, const T& val) {
+  iterator Insert(const_iterator position, size_type n, const T& val) {
     for (size_type i = 0; i < n; ++i) {
       position = Insert(position, val);
     }
@@ -247,8 +297,7 @@ class List {
   }
 
   template <typename InputIterator>
-  //iterator Insert(const_iterator position, InputIterator first, 
-  iterator Insert(iterator position, InputIterator first, 
+  iterator Insert(const_iterator position, InputIterator first, 
                   InputIterator last) {
     for (; first != last; ++first) {
       position = Insert(position, *first);
@@ -256,8 +305,7 @@ class List {
     return position;
   }
 
-  //iterator Insert(const_iterator position, value_type&& val) {
-  iterator Insert(iterator position, value_type&& val) {
+  iterator Insert(const_iterator position, value_type&& val) {
     Node* tmp = CreateNode(std::move(val));
     tmp->next = position.node;
     tmp->prev = position.node->prev;
@@ -266,8 +314,7 @@ class List {
     return tmp;
   }
   
-  //iterator Insert(const_iterator position, 
-  iterator Insert(iterator position, 
+  iterator Insert(const_iterator position, 
                   std::initializer_list<value_type> il) {
     return Insert(position, il.begin(), il.end());
   }
