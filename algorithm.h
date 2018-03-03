@@ -52,31 +52,6 @@ OutputIterator Transform(InputIterator begin, InputIterator end,
 
 }
 
-template <typename InputIterator>
-typename std::iterator_traits<InputIterator>::difference_type
-__Distance(InputIterator begin, InputIterator end, std::input_iterator_tag) {
-  typename std::iterator_traits<InputIterator>::difference_type n = 0;
-  while (begin != end) {
-    ++begin;
-    ++n;
-  }
-  return n;
-}
-
-template <typename RandomAccessIterator>
-typename std::iterator_traits<RandomAccessIterator>::difference_type
-__Distance(RandomAccessIterator begin, RandomAccessIterator end, std::random_access_iterator_tag) {
-  return end - begin;
-}
-
-template <typename InputIterator>
-typename std::iterator_traits<InputIterator>::difference_type
-Distance(InputIterator begin, InputIterator end) {
-  typedef typename std::iterator_traits<InputIterator>::iterator_category category;
-  //distance(begin, end, category);
-  return __Distance(begin, end, category());
-}
-
 template <typename InputIterator, typename Distance>
 void __Advance(InputIterator& i, Distance n, std::input_iterator_tag) {
   while (n--) {
