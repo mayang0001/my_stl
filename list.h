@@ -3,8 +3,8 @@
 
 #include <memory>
 #include <iostream>
+//#include "iterator.h"
 #include <iterator>
-
 namespace my {
 
 template <typename T>
@@ -296,15 +296,48 @@ class List {
 
   iterator Insert(const_iterator position, size_type n, const T& val) {
     iterator ret(position.node);
-    for (size_type i = 0; i < n; ++i) {
-      position = Insert(position, val);
+    if (n > 0) {
+      using deleter_type = std::function<void(Node*)>;
+      deleter_type deleter = [this](Node* node) {
+        alloc_.deallocate(node, 1);
+      };
+      std::unique_ptr<Node, deleter_type> hold(alloc_.allocate(1), deleter);
+      hold->prev = nullptr;
+      alloc_.construct(&hold->data, val);
+      ret = iterator(hold.release());
+      iterator e = ret;
+      try {
+        for (--n; n != 0; --n, ++e) {
+          hold.reset(alloc_.allocate(1));
+          alloc_.construct(&hold->data, val);
+          e.node->next = hold.get();
+          hold->prev = e.node;
+          hold.release();
+        }
+      } catch (...) {
+        while (true) {
+          alloc_.destroy(e.node);
+          Node* prev = e.node->prev;
+          alloc_.deallocate(e.node, 1);
+          if (prev == nullptr) {
+            break;
+          }
+          e = iterator(prev);
+        }
+        throw;
+      }
+      e.node->next = position.node;
+      ret.node->prev = position.node->prev;
+      position.node->prev->next = ret.node;
+      position.node->prev = e.node;
     }
     return ret;
   }
 
   template <typename InputIterator>
-  iterator Insert(const_iterator position, InputIterator first, 
-                  InputIterator last) {
+  iterator Insert(
+      const_iterator position, InputIterator first, InputIterator last,
+      typename std::enable_if<std::__is_input_iterator<InputIterator>::value>::type* = 0) {
     iterator ret(position.node);
     for (; first != last; ++first) {
       position = Insert(position, *first);
@@ -313,12 +346,17 @@ class List {
   }
 
   iterator Insert(const_iterator position, value_type&& val) {
-    Node* tmp = CreateNode(std::move(val));
-    tmp->next = position.node;
-    tmp->prev = position.node->prev;
-    position.node->prev->next = tmp;
-    position.node->prev = tmp;
-    return tmp;
+    using deleter_type = std::function<void(Node* node)>;
+    deleter_type deleter = [this](Node* node) {
+      alloc_.deallocate(node, 1);
+    };
+    std::unique_ptr<Node, deleter_type> hold(alloc_.allocate(1), deleter);
+    alloc_.construct(&hold->data, std::move(val));
+    hold->next = position.node;
+    hold->prev = position.node->prev;
+    position.node->prev->next = hold.get();
+    position.node->prev = hold.get();
+    return iterator(hold.release());
   }
   
   iterator Insert(const_iterator position, 
@@ -397,19 +435,6 @@ private:
   Node* CreateNode() {
     Node* tmp = alloc_.allocate(1);
     alloc_.construct(&tmp->data); 
-    return tmp;
-  }
-
-  Node* CreateNode(const value_type& val) {
-    Node* tmp = alloc_.allocate(1);
-    alloc_.construct(&tmp->data, val); 
-    return tmp;
-  }
-
-  Node* CreateNode(value_type&& val) {
-    std::cout << "move create node is called" << std::endl;
-    Node* tmp = alloc_.allocate(1);
-    alloc_.construct(&tmp->data, std::move(val)); 
     return tmp;
   }
 
