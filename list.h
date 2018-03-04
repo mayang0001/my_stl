@@ -3,8 +3,8 @@
 
 #include <memory>
 #include <iostream>
-//#include "iterator.h"
-#include <iterator>
+#include "iterator.h"
+
 namespace my {
 
 template <typename T>
@@ -32,15 +32,15 @@ struct ListIterator {
   using pointer = Ptr;
   using difference_type = ptrdiff_t;
   using size_type = size_t;
-  using iterator_category = std::bidirectional_iterator_tag; 
+  using iterator_category = bidirectional_iterator_tag; 
 
   using Node = ListNode<T>;
 
   Node* node;
   
-  ListIterator() { node = nullptr; }
-  ListIterator(Node* x) { node = x; }
-  ListIterator(const ListIterator& x) { node = x.node; }
+  ListIterator() : node(nullptr) {}
+  ListIterator(Node* x) : node(x) {}
+  ListIterator(const ListIterator& x) : node(x.node) {}
 
   bool operator==(const ListIterator& x) const { return node == x.node; }
   bool operator!=(const ListIterator& x) const { return node != x.node; }
@@ -54,9 +54,9 @@ struct ListIterator {
   }
 
   Self operator++(int) {
-    Self temp = *this;
+    Self tmp(node);
     ++*this;
-    return temp;
+    return tmp;
   }
 
   Self& operator--() {
@@ -65,9 +65,9 @@ struct ListIterator {
   }
 
   Self operator--(int) {
-    Self temp = *this;
+    Self tmp(node);
     --*this;
-    return temp;
+    return tmp;
   }
 };
 
@@ -82,16 +82,16 @@ struct ListConstIterator {
   using pointer = Ptr;
   using difference_type = ptrdiff_t;
   using size_type = size_t;
-  using iterator_category = std::bidirectional_iterator_tag; 
+  using iterator_category = bidirectional_iterator_tag; 
 
   using Node = ListNode<T>;
 
   Node* node;
   
-  ListConstIterator() { node = nullptr; }
-  ListConstIterator(Node* x) { node = x; }
-  ListConstIterator(const iterator& x) { node = x.node; }
-  ListConstIterator(const ListConstIterator& x) { node = x.node; }
+  ListConstIterator() : node(nullptr) {}
+  ListConstIterator(Node* x) : node(x) {}
+  ListConstIterator(const iterator& x) : node(x.node) {}
+  ListConstIterator(const ListConstIterator& x) : node(x.node) {}
 
   bool operator==(const ListConstIterator& x) const { return node == x.node; }
   bool operator!=(const ListConstIterator& x) const { return node != x.node; }
@@ -105,9 +105,9 @@ struct ListConstIterator {
   }
 
   Self operator++(int) {
-    Self temp = *this;
+    Self tmp(node);
     ++*this;
-    return temp;
+    return tmp;
   }
 
   Self& operator--() {
@@ -116,9 +116,9 @@ struct ListConstIterator {
   }
 
   Self operator--(int) {
-    Self temp = *this;
+    Self tmp(node);
     --*this;
-    return temp;
+    return tmp;
   }
 };
 
@@ -181,24 +181,18 @@ class List {
        const allocator_type& alloc = allocator_type()) 
       : alloc_(alloc) {
     InitializeEmpty();
-    for(; first != last; ++first) {
-      Insert(End(), *first);
-    }
+    Insert(Begin(), first, last);
   }
 
   List(const List& list) {
     InitializeEmpty();
-    for (auto iter = list.Begin(); iter != list.End(); ++iter) {
-      Insert(Begin(), *iter);
-    } 
+    Insert(Begin(), list.Begin(), list.End());
   }
 
   List(const List& list, const allocator_type& alloc) 
       : alloc_(alloc) {
     InitializeEmpty();
-    for (auto iter = list.Begin(); iter != list.End(); ++iter) {
-      Insert(Begin(), *iter);
-    } 
+    Insert(Begin(), list.Begin(), list.End());
   }
 
   List(List&& list) {
@@ -221,7 +215,21 @@ class List {
   }
 
   List& operator=(const List& list) {
-  
+    if (this != &list) {
+      iterator first1 = Begin();
+      iterator last1 = End();
+      const_iterator first2 = list.Cbegin();
+      const_iterator last2 = list.Cend();
+      while (first1 != last1 && first2 != last2) {
+        *first1++ = *first2++;
+      }
+      if (first1 == last1) {
+        Insert(last1, first2, last2);
+      } else {
+        Erase(first1, last1);
+      }
+    }
+    return *this;
   }
 
   List& operator=(List&& list) {
@@ -234,7 +242,19 @@ class List {
   }
 
   List& operator=(std::initializer_list<value_type> il) {
-  
+    iterator first1 = Begin();
+    iterator last1 = End();
+    auto first2 = il.begin();
+    auto last2 = il.end();
+    while (first1 != last1 && first2 != last2) {
+      *first1++ = *first2++;
+    }
+    if (first1 == last1) {
+      Insert(last1, first2, last2);
+    } else {
+      Erase(first1, last1);
+    }
+    return *this;
   }
 
   template <typename... Args>
@@ -264,20 +284,17 @@ class List {
   }
 
   void PopFront() {
-    erase(Begin()); 
+    Erase(Begin()); 
   }
 
   void PopBack() {
-    // erase(--End());
+    // Erase(--End());
     iterator tmp = End();
-    erase(--tmp);
+    Erase(--tmp);
   }
 
   void Clear() {
-    auto iter = Begin();
-    while (iter != End()) {
-      iter = erase(iter);
-    }
+    Erase(Begin(), End());
   }
 
   iterator Insert(const_iterator position, const value_type& val) {
@@ -299,7 +316,8 @@ class List {
     if (n > 0) {
       using deleter_type = std::function<void(Node*)>;
       deleter_type deleter = [this](Node* node) {
-        alloc_.deallocate(node, 1);
+      Clear();
+       alloc_.deallocate(node, 1);
       };
       std::unique_ptr<Node, deleter_type> hold(alloc_.allocate(1), deleter);
       hold->prev = nullptr;
@@ -337,10 +355,11 @@ class List {
   template <typename InputIterator>
   iterator Insert(
       const_iterator position, InputIterator first, InputIterator last,
-      typename std::enable_if<std::__is_input_iterator<InputIterator>::value>::type* = 0) {
+      typename std::enable_if<is_input_iterator<InputIterator>::value>::type* = 0) {
     iterator ret(position.node);
     for (; first != last; ++first) {
       position = Insert(position, *first);
+      ++position;
     } 
     return ret;
   }
@@ -373,7 +392,7 @@ class List {
   //  position.node->prev = tmp;
   //}
 
-  iterator erase(iterator position) {
+  iterator Erase(iterator position) {
     Node* next_node = position.node->next;
     Node* prev_node = position.node->prev;
     next_node->prev = prev_node;
@@ -382,12 +401,11 @@ class List {
     return next_node;
   }
 
-  iterator erase(iterator first, iterator last) {
-    auto iter = first;
-    while (iter != last) {
-      iter = erase(iter);
+  iterator Erase(iterator first, iterator last) {
+    while (first != last) {
+      Erase(first++);
     }
-    return iter;
+    return last;
   }
 
   iterator Begin() { return node_->next; }
@@ -399,7 +417,7 @@ class List {
 
   bool Empty() const { return node_ == node_->next; }
   size_type Size() const {
-    size_type result = std::distance(Begin(), End());
+    size_type result = Distance(Begin(), End());
     return result;  
   }
 
