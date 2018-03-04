@@ -6,7 +6,9 @@
 #include <memory>
 #include <string>
 
-template<typename T>
+namespace my {
+
+template<typename T, typename Alloc = std::allocator<T>>
 class Vector {
 public:
   using value_type = T;
@@ -18,6 +20,7 @@ public:
   using const_pointer = const value_type*;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
+  using allocator_type = Alloc;
 
 public:
   Vector() 
@@ -26,18 +29,18 @@ public:
         end_of_storage_(nullptr) {}
 
   explicit Vector(int n) {
-    start_ = alloc.allocate(n);
+    start_ = alloc_.allocate(n);
     finish_ = end_of_storage_ = start_ + n;
     for (auto p = start_; p != finish_; ) {
-      alloc.construct(p++);
+      alloc_.construct(p++);
     }
   }
 
-  Vector(int n, const T& val) {
-    start_ = alloc.allocate(n);
+  Vector(int n, const value_type& val) {
+    start_ = alloc_.allocate(n);
     finish_ = end_of_storage_ = start_ + n;
     for (auto p = start_; p != finish_; ) {
-      alloc.construct(p++, val);
+      alloc_.construct(p++, val);
     }
   }
 
@@ -63,8 +66,8 @@ public:
 
   // Initializer list may be implemented as a pair of pointers
   // or pointer and length
-  // Vector(std::initializer_list<T>& il) {
-  Vector(std::initializer_list<T> il) {
+  // Vector(std::initializer_list<value_type>& il) {
+  Vector(std::initializer_list<value_type> il) {
     auto start_and_finish = allocate_and_copy(il.begin(), il.end());
     start_ = start_and_finish.first;
     finish_ = end_of_storage_ = start_and_finish.second;
@@ -96,23 +99,23 @@ public:
     free(); 
   }
 
-  void push_back(const T& val) {
+  void push_back(const value_type& val) {
     if (finish_ == end_of_storage_) {
       reallocate();
     } 
-    alloc.construct(finish_++, val);
+    alloc_.construct(finish_++, val);
   }
 
-  void push_back(T&& val) {
+  void push_back(value_type&& val) {
     if (finish_ == end_of_storage_) {
       reallocate();
     }
-    //alloc.construct(finish_++, val);
-    alloc.construct(finish_++, std::move(val));
+    //alloc_.construct(finish_++, val);
+    alloc_.construct(finish_++, std::move(val));
   }
 
   void pop_back() {
-    alloc.destroy(--finish_); 
+    alloc_.destroy(--finish_); 
   } 
   
   template<typename... Args>
@@ -125,19 +128,19 @@ public:
     if (finish_ == end_of_storage_) {
       reallocate();
     } 
-    alloc.construct(finish_++, std::forward<Args>(args)...); 
+    alloc_.construct(finish_++, std::forward<Args>(args)...); 
     //alloc.construct(finish_++, args...); 
   }
 
-  iterator insert(const_iterator position, const T& val) {
+  iterator insert(const_iterator position, const value_type& val) {
     insert(position, 1, val); 
   }
 
-  iterator insert(const_iterator position, size_type n, const T& val) {
+  iterator insert(const_iterator position, size_type n, const value_type& val) {
   
   }
 
-  iterator insert(const_iterator position, T&& val) {
+  iterator insert(const_iterator position, value_type&& val) {
   
   }
 
@@ -148,13 +151,13 @@ public:
   iterator erase(const_iterator position) {
     copy(position + 1, finish_, position);
     --finish_;
-    alloc.destroy(finish_);
+    alloc_.destroy(finish_);
     return position;
   }
 
   iterator erase(const_iterator first, const_iterator last) {
     iterator i = copy(last, finish_, first);
-    alloc.destroy(i, finish_);
+    alloc_.destroy(i, finish_);
     finish_ = finish_ - (last - first);
     return first; 
   }
@@ -166,15 +169,15 @@ public:
   void resize(int n) {
   }
 
-  value_type* data() noexcept { return start_; }
-  const value_type* data() const noexcept { return start_; }
+  pointer data() noexcept { return start_; }
+  const pointer data() const noexcept { return start_; }
 
   reference front() { return *start_; }
   const_reference front() const { return *start_; }
   reference back() { return *(finish_ - 1); }
   const_reference back() const { return *(finish_ - 1); }
 
-  T& at(int idx) {
+  reference at(int idx) {
     // TODO check(idx < size());
     return *(start_ + idx);  
   } 
@@ -195,18 +198,18 @@ public:
 
 private:
   void free() {
-    std::for_each(start_, finish_, [this](T& s) { alloc.destroy(&s); });
-    alloc.deallocate(start_, end_of_storage_ - start_);
+    std::for_each(start_, finish_, [this](value_type& s) { alloc_.destroy(&s); });
+    alloc_.deallocate(start_, end_of_storage_ - start_);
   }
   
   void reallocate() {
     int old_size = size();
     int size = old_size ? old_size * 2 : 1;
-    auto new_start = alloc.allocate(size);
+    auto new_start = alloc_.allocate(size);
     auto from = start_;
     auto to = new_start; 
     for (int i = 0; i < old_size; i++) {
-      alloc.construct(to++, std::move(*from++));
+      alloc_.construct(to++, std::move(*from++));
     }
     free();
     start_ = new_start;
@@ -214,17 +217,19 @@ private:
     end_of_storage_ = start_ + size;
   }
 
-  std::pair<T*, T*> allocate_and_copy(const T* begin, 
-                                      const T* end) {
-    auto start = alloc.allocate(end - begin);
+  std::pair<value_type*, value_type*> allocate_and_copy(const value_type* begin,
+                                                        const value_type* end) {
+    auto start = alloc_.allocate(end - begin);
     auto finish = std::uninitialized_copy(begin, end, start);
     return {start, finish}; 
   }
 
-  std::allocator<T> alloc;
-  T* start_;
-  T* finish_;
-  T* end_of_storage_;
+  allocator_type alloc_;
+  value_type* start_;
+  value_type* finish_;
+  value_type* end_of_storage_;
 };
 
-#endif
+} // namespace my
+
+#endif // VECTOR_H_
