@@ -195,12 +195,22 @@ class List {
     Insert(Begin(), list.Begin(), list.End());
   }
 
-  List(List&& list) {
-  
+  List(List&& list) 
+      :alloc_(std::move(list.alloc_)) {
+    InitializeEmpty();
+    node_->next = list.node_->next;
+    node_->prev = list.node_->prev;
+    list.node_->next = nullptr;
+    list.node_->prev = nullptr;
   }
 
-  List(List&& list, const allocator_type& alloc) {
-  
+  List(List&& list, const allocator_type& alloc) 
+      : alloc_(alloc) {
+    InitializeEmpty();
+    node_->next = list.node_->next;
+    node_->prev = list.node_->prev; 
+    list.node_->next = nullptr;
+    list.node_->prev = nullptr;
   }
 
   //List(List&& list, const allocator_type& alloc = allocator_type()) {
@@ -212,6 +222,10 @@ class List {
       : alloc_(alloc) {
     InitializeEmpty();
     Insert(Begin(), il.begin(), il.end()); 
+  }
+
+  ~List() {
+    Clear();
   }
 
   List& operator=(const List& list) {
@@ -235,8 +249,10 @@ class List {
   List& operator=(List&& list) {
     if (node_ != list.node_) {
       Clear();
-      node_ = list.node_;
-      list.InitializeEmpty();
+      node_->next = list.node_->next;
+      node_->prev = list.node_->prev;
+      list.node_->next = nullptr;
+      list.node_->prev = nullptr;
     }  
     return *this;
   }
