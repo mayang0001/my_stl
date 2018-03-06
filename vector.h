@@ -133,11 +133,38 @@ public:
   }
 
   iterator insert(const_iterator position, const value_type& val) {
-    insert(position, 1, val); 
   }
 
   iterator insert(const_iterator position, size_type n, const value_type& val) {
-  
+    if (size_type(end_of_storage_ - finish_) < n ) {
+      const size_type old_size = end_of_storage_ - start_;
+      const size_type new_size = old_size + max(old_size, n);
+
+      iterator new_start = alloc_::allocate(new_size);
+      iterator new_finish = new_start;
+      try {
+        new_finish = std::uninitialized_copy(start_, position, new_start);
+        new_finish = std::uninitialized_fill_n(new_finish, n, x);
+        new_finish = std::uninitialized_copy(position, finish_, new_finish);
+      } catch(...) {
+        destroy(new_start, new_finish);
+        alloc_::deallocate(new_start, new_size);
+        throw;
+      }
+      destroy(start_, finish_);
+      alloc_::deallocate(start_, end_of_storage_);
+      start_ = new_start;
+      finish_ = new_finish;
+      end_of_storage_ = new_start + new_size;
+    } else {
+      const size_type num_elems = finish_ - position;
+      iterator old_finish = finish_;
+      finish_ += n;
+      
+      std::uninitialized_copy(position, finish_, finish_ - num_elems);
+      std::uninitialized_fill_n(position, n, x);
+      return position + n;
+    }
   }
 
   iterator insert(const_iterator position, value_type&& val) {
@@ -148,29 +175,29 @@ public:
   iterator insert(const_iterator position, Iterator first, Iterator last) {
   }
 
-  iterator erase(const_iterator position) {
-    copy(position + 1, finish_, position);
+  iterator Erase(const_iterator position) {
+    std::copy(position + 1, finish_, position);
     --finish_;
     alloc_.destroy(finish_);
     return position;
   }
 
-  iterator erase(const_iterator first, const_iterator last) {
-    iterator i = copy(last, finish_, first);
+  iterator Erase(const_iterator first, const_iterator last) {
+    iterator i = std::copy(last, finish_, first);
     alloc_.destroy(i, finish_);
     finish_ = finish_ - (last - first);
     return first; 
   }
 
   void clear() {
-    erase(begin(), end());
+    Erase(begin(), end());
   }
 
   void resize(int n) {
   }
 
   pointer data() noexcept { return start_; }
-  const pointer data() const noexcept { return start_; }
+  const_pointer data() const noexcept { return start_; }
 
   reference front() { return *start_; }
   const_reference front() const { return *start_; }
@@ -217,17 +244,17 @@ private:
     end_of_storage_ = start_ + size;
   }
 
-  std::pair<value_type*, value_type*> allocate_and_copy(const value_type* begin,
-                                                        const value_type* end) {
+  std::pair<value_type*, value_type*> allocate_and_copy(const_pointer begin,
+                                                        const_pointer end) {
     auto start = alloc_.allocate(end - begin);
     auto finish = std::uninitialized_copy(begin, end, start);
     return {start, finish}; 
   }
 
   allocator_type alloc_;
-  value_type* start_;
-  value_type* finish_;
-  value_type* end_of_storage_;
+  pointer start_;
+  pointer finish_;
+  pointer end_of_storage_;
 };
 
 } // namespace my
