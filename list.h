@@ -442,14 +442,14 @@ class List {
   reference Back() { return *(--End()); }
   const_reference Back() const { return *(--End()); }
 
-  void Remove(const value_type& val) {}
+  void Remove(const value_type& val);
   template <typename Predicate>
-  void RemoveIf(Predicate prde) {}
-  void Unique() {}
+  void RemoveIf(Predicate pred);
+  void Unique();
   template <typename BinaryPredict>
-  void Unique(BinaryPredict binary_pred) {}
-  void merge(List& x);
-  void merge(List&& x);
+  void Unique(BinaryPredict binary_pred);
+  void Merge(List& x);
+  void Merge(List&& x);
   template <typename Compare>
   void Merge(List& x, Compare comp);
   template <typename Compare>
@@ -457,7 +457,7 @@ class List {
   void Sort();
   template <typename Compare>
   void Sort(Compare comp);
-  void Reverse() {}
+  void Reverse();
 
 private:
   void InitializeEmpty() {
@@ -487,6 +487,61 @@ private:
   Node* node_; 
 };
 
+template <typename T, typename Alloc>
+void List<T, Alloc>::Remove(const value_type& val) {
+  auto now = node_->next;
+  while (now != node_) {
+    if (now->data == val) {
+      std::cout << val << std::endl;
+      now->prev->next = now->next;
+      now->next->prev = now->prev;
+      auto next = now->next;
+      DestroyNode(now);
+      now = next;
+    } else {
+      now = now->next;
+    }
+  }
+}
+
+//template <typename T, typename Alloc>
+//void List<T, Alloc>::template <typename Predict> RemoveIf(Predict pred) {
+//
+//}
+
+template <typename T, typename Alloc>
+void List<T, Alloc>::Unique() {
+
+}
+
+//template <typename T, typename Alloc>
+//void List<T, Alloc>::template <typename BinaryPredict>Unique(BinaryPredict pred) {
+//}
+
+template <typename T, typename Alloc>
+void List<T, Alloc>::Merge(List& x) {
+
+}
+
+template <typename T, typename Alloc>
+void List<T, Alloc>::Merge(List&& x) {
+
+}
+
+template <typename T, typename Alloc>
+void List<T, Alloc>::Sort() {
+}
+
+//template <typename T, typename Alloc>
+//void List<T, Alloc>::template <typename Compare> Sort(Compare comp) {
+//
+//}
+
+template <typename T, typename Alloc>
+void List<T, Alloc>::Reverse() {
+}
+
 } // namespace my
 
 #endif // LIST_H_
+
