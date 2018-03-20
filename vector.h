@@ -5,6 +5,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include "algorithm.h"
+#include "type_traits.h"
 
 namespace my {
 
@@ -136,23 +138,23 @@ public:
   }
 
   iterator insert(const_iterator position, size_type n, const value_type& val) {
-    if (size_type(end_of_storage_ - finish_) < n ) {
+    if (size_type(end_of_storage_ - finish_) < n) {
       const size_type old_size = end_of_storage_ - start_;
-      const size_type new_size = old_size + max(old_size, n);
+      const size_type new_size = old_size + Max(old_size, n);
 
-      iterator new_start = alloc_::allocate(new_size);
+      iterator new_start = alloc_.allocate(new_size);
       iterator new_finish = new_start;
       try {
         new_finish = std::uninitialized_copy(start_, position, new_start);
-        new_finish = std::uninitialized_fill_n(new_finish, n, x);
+        new_finish = std::uninitialized_fill_n(new_finish, n, val);
         new_finish = std::uninitialized_copy(position, finish_, new_finish);
       } catch(...) {
         destroy(new_start, new_finish);
-        alloc_::deallocate(new_start, new_size);
+        alloc_.deallocate(new_start, new_size);
         throw;
       }
       destroy(start_, finish_);
-      alloc_::deallocate(start_, end_of_storage_);
+      alloc_.deallocate(start_, end_of_storage_);
       start_ = new_start;
       finish_ = new_finish;
       end_of_storage_ = new_start + new_size;
@@ -162,7 +164,7 @@ public:
       finish_ += n;
       
       std::uninitialized_copy(position, finish_, finish_ - num_elems);
-      std::uninitialized_fill_n(position, n, x);
+      std::uninitialized_fill_n(position, n, val);
       return position + n;
     }
   }
@@ -172,7 +174,9 @@ public:
   }
 
   template <typename Iterator>
-  iterator insert(const_iterator position, Iterator first, Iterator last) {
+  iterator insert(const_iterator position, Iterator first, Iterator last, 
+                  typename enable_if<std::__is_input_iterator<Iterator>::value>::type* = 0) {
+    std::cout << "template insert is called" << std::endl;
   }
 
   iterator Erase(const_iterator position) {
