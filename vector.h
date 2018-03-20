@@ -25,12 +25,13 @@ public:
   using allocator_type = Alloc;
 
 public:
-  Vector() 
+  explicit Vector(const allocator_type& alloc = allocator_type()) 
       : start_(nullptr), 
         finish_(nullptr), 
-        end_of_storage_(nullptr) {}
+        end_of_storage_(nullptr),
+        alloc_(alloc) {}
 
-  explicit Vector(int n) {
+  explicit Vector(size_type n) {
     start_ = alloc_.allocate(n);
     finish_ = end_of_storage_ = start_ + n;
     for (auto p = start_; p != finish_; ) {
@@ -38,7 +39,9 @@ public:
     }
   }
 
-  Vector(int n, const value_type& val) {
+  Vector(size_type n, const value_type& val,
+         const allocator_type& alloc = allocator_type())
+      : alloc_(alloc) {
     start_ = alloc_.allocate(n);
     finish_ = end_of_storage_ = start_ + n;
     for (auto p = start_; p != finish_; ) {
@@ -47,7 +50,9 @@ public:
   }
 
   template<typename InputIterator>
-  Vector(InputIterator first, InputIterator last) {
+  Vector(InputIterator first, InputIterator last,
+         const allocator_type& alloc = allocator_type(), 
+         typename enable_if<is_input_iterator<InputIterator>::value>::type* = 0) {
     auto start_and_finish = allocate_and_copy(first, last);
     start_ = start_and_finish.first;
     finish_ = end_of_storage_ = start_and_finish.second;
@@ -59,17 +64,27 @@ public:
     finish_ = end_of_storage_ = start_and_finish.second;
   }
 
+  Vector(const Vector& vec, const allocator_type& alloc) 
+      : alloc_(alloc) {
+    auto start_and_finish = allocate_and_copy(vec.begin(), vec.end());
+    start_ = start_and_finish.first;
+    finish_ = end_of_storage_ = start_and_finish.second;
+  }
+
   Vector(Vector&& vec) 
       : start_(vec.start_), 
         finish_(vec.finish_), 
-        end_of_storage_(vec.end_of_storage_) {
+        end_of_storage_(vec.end_of_storage_),
+        alloc_(vec.alloc_) {
     vec.start_ = vec.finish_ = vec.end_of_storage_ = nullptr;
   }
 
   // Initializer list may be implemented as a pair of pointers
   // or pointer and length
   // Vector(std::initializer_list<value_type>& il) {
-  Vector(std::initializer_list<value_type> il) {
+  Vector(std::initializer_list<value_type> il,
+         const allocator_type& alloc = allocator_type()) 
+      : alloc_(alloc) {
     auto start_and_finish = allocate_and_copy(il.begin(), il.end());
     start_ = start_and_finish.first;
     finish_ = end_of_storage_ = start_and_finish.second;
@@ -95,6 +110,9 @@ public:
       vec.start_ = vec.finish_ = vec.end_of_storage_ = nullptr;
     }
     return *this;
+  }
+
+  Vector& operator=(std::initializer_list<T> il) {
   }
 
   ~Vector() {
