@@ -56,7 +56,7 @@ class Vector {
   Vector(size_type n, const value_type& val,
          const allocator_type& alloc = allocator_type()) {
     start_ = data_allocator::allocate(n);
-    finish_ = uninitialized_fill_n(start_, n, val);
+    finish_ = std::uninitialized_fill_n(start_, n, val);
     end_of_storage_ = finish_;
   }
 
@@ -65,23 +65,22 @@ class Vector {
          const allocator_type& alloc = allocator_type()) {
          // typename
          //     enable_if<is_input_iterator<InputIterator>::value>::type* = 0) {
-    size_type n = 0;
-    distance(first, last, n);
+    size_type n = std::distance(first, last);
     start_ = data_allocator::allocate(n);
     end_of_storage_ = start_ + n;
-    finish_ = uninitialized_copy(start_, finish_, start_);
+    finish_ = std::uninitialized_copy(first, last, start_);
   }
 
   Vector(const Vector& vec) {
-    start_ = data_allocator::allocate(vec.Size());
-    end_of_storage_ = start_ + vec.Size();
-    finish_ = uninitialized_copy(vec.Begin(), vec.end(), start_);
+    start_ = data_allocator::allocate(vec.size());
+    end_of_storage_ = start_ + vec.size();
+    finish_ = std::uninitialized_copy(vec.begin(), vec.end(), start_);
   }
 
   Vector(const Vector& vec, const allocator_type& alloc) {
-    start_ = data_allocator::allocate(vec.Size());
-    end_of_storage_ = start_ + vec.Size();
-    finish_ = uninitialized_copy(vec.Begin(), vec.end(), start_);
+    start_ = data_allocator::allocate(vec.size());
+    end_of_storage_ = start_ + vec.size();
+    finish_ = uninitialized_copy(vec.begin(), vec.end(), start_);
   }
 
   Vector(Vector&& vec)
@@ -96,11 +95,10 @@ class Vector {
   // Vector(std::initializer_list<value_type>& il) {
   Vector(std::initializer_list<value_type> il,
          const allocator_type& alloc = allocator_type()) {
-    size_type n = 0;
-    distance(il.begin(), il.end(), n);
+    size_type n = std::distance(il.begin(), il.end());
     start_ = data_allocator::allocate(n);
     end_of_storage_ = start_ + n;
-    finish_ = uninitialized_copy(start_, finish_, start_);
+    finish_ = std::uninitialized_copy(il.begin(), il.end(), start_);
   }
 
   Vector& operator=(const Vector& vec) {
