@@ -165,18 +165,21 @@ class Vector {
     // alloc.construct(finish_++, args...);
   }
 
-  iterator insert(const_iterator position, const value_type& val) {
+  iterator insert(iterator position, const value_type& val) {
+    insert(position, 1, val);
   }
 
-  iterator insert(const_iterator position, size_type n, const value_type& val) {
+  iterator insert(iterator position, size_type n, const value_type& val) {
     if (size_type(end_of_storage_ - finish_) < n) {
       const size_type old_size = end_of_storage_ - start_;
       const size_type new_size = old_size + Max(old_size, n);
 
       iterator new_start = data_allocator::allocate(new_size);
       iterator new_finish = new_start;
+      iterator ret_position;
       try {
         new_finish = std::uninitialized_copy(start_, position, new_start);
+        ret_position = new_finish;
         new_finish = std::uninitialized_fill_n(new_finish, n, val);
         new_finish = std::uninitialized_copy(position, finish_, new_finish);
       } catch(...) {
@@ -185,10 +188,11 @@ class Vector {
         throw;
       }
       destroy(start_, finish_);
-      data_allocator::deallocate(start_, end_of_storage_);
+      data_allocator::deallocate(start_, end_of_storage_ - start_);
       start_ = new_start;
       finish_ = new_finish;
       end_of_storage_ = new_start + new_size;
+      return ret_position;
     } else {
       const size_type num_elems = finish_ - position;
       iterator old_finish = finish_;
@@ -217,7 +221,7 @@ class Vector {
     return position;
   }
 
-  iterator erase(const_iterator first, const_iterator last) {
+  iterator erase(iterator first, iterator last) {
     iterator i = std::copy(last, finish_, first);
     destroy(i, finish_);
     finish_ = finish_ - (last - first);
@@ -228,7 +232,16 @@ class Vector {
     erase(begin(), end());
   }
 
+
+  void resize(size_t n, const value_type& val) {
+    if (n < size()) {
+      erase(begin() + n, end());
+    } else {
+      insert(end(), n - size(), val);
+    }
+  }
   void resize(int n) {
+    resize(n, value_type());
   }
 
   pointer data() noexcept { return start_; }
