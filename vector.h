@@ -223,7 +223,6 @@ class Vector {
     erase(begin(), end());
   }
 
-
   void resize(size_t n, const value_type& val) {
     if (n < size()) {
       erase(begin() + n, end());
@@ -233,6 +232,17 @@ class Vector {
   }
   void resize(int n) {
     resize(n, value_type());
+  }
+
+  void reserve(size_t n) {
+    if (n > capacity()) {
+      pointer new_start = data_allocator::allocate(n);
+      pointer new_finish = std::copy(begin(), end(), new_start);
+      free();
+      start_ = new_start;
+      finish_ = new_finish;
+      end_of_storage_ = start_ + n;
+    }
   }
 
   pointer data() noexcept { return start_; }
