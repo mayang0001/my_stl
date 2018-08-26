@@ -47,7 +47,7 @@ value_type(const Iterator&) {
   return static_cast<typename iterator_traits<Iterator>::value_type*>(0);
 }
 
-template <typename T, typename Up, 
+template <typename T, typename Up,
           bool = std::__has_iterator_category<iterator_traits<T>>::value>
 struct has_iterator_category_convertible_to : public std::integral_constant<bool, std::is_convertible<typename iterator_traits<T>::iterator_category, Up>::value> {};
 
@@ -55,12 +55,12 @@ template <typename T, typename Up>
 struct has_iterator_category_convertible_to<T, Up, false> : std::false_type {};
 
 template <typename T>
-struct is_input_iterator 
+struct is_input_iterator
     : public has_iterator_category_convertible_to<T, input_iterator_tag> {};
 
 template <typename InputIterator>
 typename iterator_traits<InputIterator>::difference_type
-__Distance(InputIterator begin, InputIterator end, input_iterator_tag) {
+__distance(InputIterator begin, InputIterator end, input_iterator_tag) {
   typename iterator_traits<InputIterator>::difference_type n = 0;
   while (begin != end) {
     ++begin;
@@ -71,17 +71,17 @@ __Distance(InputIterator begin, InputIterator end, input_iterator_tag) {
 
 template <typename RandomAccessIterator>
 typename iterator_traits<RandomAccessIterator>::difference_type
-__Distance(RandomAccessIterator begin, RandomAccessIterator end, random_access_iterator_tag) {
+__distance(RandomAccessIterator begin, RandomAccessIterator end, random_access_iterator_tag) {
   return end - begin;
 }
 
 template <typename InputIterator>
 typename iterator_traits<InputIterator>::difference_type
-Distance(InputIterator begin, InputIterator end) {
+distance(InputIterator begin, InputIterator end) {
   typedef typename iterator_traits<InputIterator>::iterator_category category;
-  return __Distance(begin, end, category());
+  return __distance(begin, end, category());
 }
 
-} // namespace my 
+}  // namespace my
 
-#endif // ITERATOR_H_
+#endif  // ITERATOR_H_
