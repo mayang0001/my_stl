@@ -9,22 +9,11 @@
 #include <utility>
 
 #include "./algorithm.h"
-#include "./type_traits.h"
 #include "./alloc.h"
+#include "./construct.h"
+#include "./type_traits.h"
 
 namespace my {
-
-template <typename T>
-inline void destroy(T* pointer) {
-  pointer->~T();
-}
-
-template <typename ForwardIterator>
-inline void destroy(ForwardIterator first, ForwardIterator last) {
-  for (; first < last; ++first) {
-    destroy(first);
-  }
-}
 
 template<typename T, typename Alloc = alloc>
 class Vector {
