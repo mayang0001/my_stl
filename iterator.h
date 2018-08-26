@@ -41,6 +41,12 @@ struct iterator_traits<T*> {
   using pointer = T*;
 };
 
+template <typename Iterator>
+typename iterator_traits<Iterator>::value_type*
+value_type(const Iterator&) {
+  return static_cast<typename iterator_traits<Iterator>::value_type*>(0);
+}
+
 template <typename T, typename Up, 
           bool = std::__has_iterator_category<iterator_traits<T>>::value>
 struct has_iterator_category_convertible_to : public std::integral_constant<bool, std::is_convertible<typename iterator_traits<T>::iterator_category, Up>::value> {};
