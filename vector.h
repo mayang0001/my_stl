@@ -54,7 +54,7 @@ class Vector {
          const allocator_type& alloc = allocator_type(),
          typename
              enable_if<is_input_iterator<InputIterator>::value>::type* = 0) {
-    size_type n = std::distance(first, last);
+    size_type n = distance(first, last);
     start_ = data_allocator::allocate(n);
     end_of_storage_ = start_ + n;
     finish_ = std::uninitialized_copy(first, last, start_);
@@ -84,7 +84,7 @@ class Vector {
   // Vector(std::initializer_list<value_type>& il) {
   Vector(std::initializer_list<value_type> il,
          const allocator_type& alloc = allocator_type()) {
-    size_type n = std::distance(il.begin(), il.end());
+    size_type n = distance(il.begin(), il.end());
     start_ = data_allocator::allocate(n);
     finish_ = std::uninitialized_copy(il.begin(), il.end(), start_);
     end_of_storage_ = start_ + n;
@@ -93,7 +93,7 @@ class Vector {
   Vector& operator=(const Vector& vec) {
     if (this != &vec) {
       free();
-      size_type n = std::distance(vec.begin(), vec.end());
+      size_type n = distance(vec.begin(), vec.end());
       start_ = data_allocator::allocate(n);
       finish_ = std::uninitialized_copy(vec.begin(), vec.end(), start_);
       end_of_storage_ = start_ + n;
@@ -114,7 +114,7 @@ class Vector {
   }
 
   Vector& operator=(std::initializer_list<T> il) {
-    size_t n = std::distance(il.begin(), il.end());
+    size_t n = distance(il.begin(), il.end());
     start_ = data_allocator::allocate(n);
     end_of_storage_ = start_ + n;
     finish_ = std::uninitialized_copy(il.begin(), il.end(), start_);
